@@ -1,0 +1,383 @@
+<?php
+
+namespace Ifm\Pages;
+
+use Ifm\Generic\Page;
+use Ifm\Services\CategoryService;
+
+class Categories extends Page
+{
+
+    public static function boot(): void
+    {
+        add_action("wp_ajax_ifm_categories_datatable", [self::class, "datatable"]);
+
+        add_action("wp_ajax_ifm_category_create", [self::class, "create"]);
+
+        add_action("wp_ajax_ifm_category_update", [self::class, "update"]);
+
+        add_action("wp_ajax_ifm_category_delete", [self::class, "delete"]);
+
+        add_action("wp_ajax_ifm_categories_reorder", [self::class, "reorder"]);
+    }
+
+    public static function render(): void
+    {
+        if (!current_user_can("manage_options")) {
+            wp_die("You do not have permission to access this page.");
+        }
+
+        $result = get_transient(self::resultKey());
+
+        if ($result !== false) {
+            delete_transient(self::resultKey());
+        }
+
+        $nonce = wp_create_nonce("ifm_categories");
+?>
+
+        <div class="wrap">
+            <h1><?php echo esc_html(self::title()); ?></h1>
+
+            <div
+                id="ifm-categories"
+                class="page-wrapper"
+                data-ajax-url="<?php echo esc_url(
+                                    admin_url("admin-ajax.php")
+                                ); ?>"
+                data-nonce="<?php echo esc_attr($nonce); ?>">
+                <?php self::renderResult($result); ?>
+
+                <div class="flex items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold">
+                            <?php echo esc_html(self::title()); ?>
+                        </h2>
+
+                        <p class="text-muted">
+                            <?php echo esc_html(
+                                __("Manage your menu categories.")
+                            ); ?>
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        id="ifm-category-add"
+                        class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i>
+
+                        <?php echo esc_html(__("Add category")); ?>
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="flex items-center justify-between gap-4 mb-4">
+                            <div class="relative max-w-sm w-full">
+                                <i
+                                    class="bi bi-search absolute start-3 top-1/2 -translate-y-1/2"></i>
+
+                                <input
+                                    type="search"
+                                    id="ifm-category-search"
+                                    class="input ps-9 w-full"
+                                    placeholder="<?php echo esc_attr(
+                                                        __("Search categories...")
+                                                    ); ?>"
+                                    autocomplete="off">
+                            </div>
+
+                            <div id="ifm-category-count" class="text-muted">
+                                0
+                            </div>
+                        </div>
+
+                        <div
+                            id="ifm-category-table-wrapper"
+                            class="table-container">
+                            <table
+                                id="ifm-category-table"
+                                class="table table-divide sm">
+                                <thead>
+                                    <?php self::headRow(); ?>
+                                </thead>
+
+                                <tbody id="ifm-category-tbody"></tbody>
+                            </table>
+
+                            <div
+                                id="ifm-category-empty"
+                                class="hidden text-center py-12 text-muted">
+                                <i class="bi bi-folder2-open text-3xl"></i>
+
+                                <p class="mt-3">
+                                    <?php echo esc_html(
+                                        __("No categories found.")
+                                    ); ?>
+                                </p>
+                            </div>
+
+                            <div
+                                id="ifm-category-loading"
+                                class="hidden text-center py-12">
+                                <i class="bi bi-arrow-repeat animate-spin text-2xl"></i>
+
+                                <p class="mt-3">
+                                    <?php echo esc_html(__("Loading...")); ?>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div
+            id="ifm-category-modal"
+            class="hidden"
+            aria-hidden="true">
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div
+                    class="absolute inset-0 bg-black/50"
+                    data-ifm-modal-close></div>
+
+                <div class="relative w-full max-w-md card">
+                    <div class="card-header flex items-center justify-between">
+                        <h2
+                            id="ifm-category-modal-title"
+                            class="text-lg font-semibold">
+                            <?php echo esc_html(__("Add category")); ?>
+                        </h2>
+
+                        <button
+                            type="button"
+                            class="btn btn-sm"
+                            data-ifm-modal-close>
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <form id="ifm-category-form">
+                        <div class="card-body">
+                            <input
+                                type="hidden"
+                                id="ifm-category-id"
+                                name="id"
+                                value="">
+
+                            <label
+                                for="ifm-category-name"
+                                class="block mb-2">
+                                <?php echo esc_html(__("Category name")); ?>
+                            </label>
+
+                            <input
+                                type="text"
+                                id="ifm-category-name"
+                                name="name"
+                                class="input w-full"
+                                required
+                                autocomplete="off">
+                        </div>
+
+                        <div class="card-footer flex justify-end gap-2">
+                            <button
+                                type="button"
+                                class="btn"
+                                data-ifm-modal-close>
+                                <?php echo esc_html(__("Cancel")); ?>
+                            </button>
+
+                            <button
+                                type="submit"
+                                id="ifm-category-save"
+                                class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i>
+
+                                <?php echo esc_html(__("Save")); ?>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    <?php
+    }
+    public static function headRow()
+    {
+    ?>
+        <tr>
+            <th><input type="checkbox" class="select-all"></th>
+            <th><?php echo esc_html(__("Name")); ?></th>
+            <th><?php echo esc_html(__("Slug")); ?></th>
+            <th><?php echo esc_html(__("Products")); ?></th>
+            <th><?php echo esc_html(__("Actions")); ?></th>
+        </tr>
+<?php
+    }
+    public static function datatable(): void
+    {
+        self::verifyAjax();
+
+        $search = isset($_POST["search"])
+            ? sanitize_text_field(wp_unslash($_POST["search"]))
+            : "";
+
+        $categories = CategoryService::all([
+            "search" => $search,
+        ]);
+
+        $data = [];
+
+        foreach ($categories as $category) {
+            $data[] = [
+                "id" => (int) $category->term_id,
+                "name" => $category->name,
+                "slug" => $category->slug,
+                "count" => (int) $category->count,
+            ];
+        }
+
+        wp_send_json_success([
+            "data" => $data,
+            "recordsTotal" => count($data),
+            "recordsFiltered" => count($data),
+        ]);
+    }
+
+    public static function create(): void
+    {
+        self::verifyAjax();
+
+        $name = isset($_POST["name"])
+            ? sanitize_text_field(wp_unslash($_POST["name"]))
+            : "";
+
+        if ($name === "") {
+            wp_send_json_error([
+                "message" => __("Category name is required."),
+            ]);
+        }
+
+        if (CategoryService::findByName($name)) {
+            wp_send_json_error([
+                "message" => __("Category already exists."),
+            ]);
+        }
+
+        $category = CategoryService::create($name);
+
+        if (!$category) {
+            wp_send_json_error([
+                "message" => __("Unable to create category."),
+            ]);
+        }
+
+        wp_send_json_success([
+            "message" => __("Category created successfully."),
+            "data" => [
+                "id" => (int) $category->term_id,
+                "name" => $category->name,
+                "slug" => $category->slug,
+                "count" => (int) $category->count,
+            ],
+        ]);
+    }
+
+    public static function update(): void
+    {
+        self::verifyAjax();
+
+        $id = isset($_POST["id"]) ? absint($_POST["id"]) : 0;
+
+        $name = isset($_POST["name"])
+            ? sanitize_text_field(wp_unslash($_POST["name"]))
+            : "";
+
+        if (!$id || $name === "") {
+            wp_send_json_error([
+                "message" => __("Invalid category data."),
+            ]);
+        }
+
+        $category = CategoryService::update($id, $name);
+
+        if (!$category) {
+            wp_send_json_error([
+                "message" => __("Unable to update category."),
+            ]);
+        }
+
+        wp_send_json_success([
+            "message" => __("Category updated successfully."),
+            "data" => [
+                "id" => (int) $category->term_id,
+                "name" => $category->name,
+                "slug" => $category->slug,
+                "count" => (int) $category->count,
+            ],
+        ]);
+    }
+
+    public static function delete(): void
+    {
+        self::verifyAjax();
+
+        $id = isset($_POST["id"]) ? absint($_POST["id"]) : 0;
+
+        if (!$id) {
+            wp_send_json_error([
+                "message" => __("Invalid category."),
+            ]);
+        }
+
+        if (!CategoryService::delete($id)) {
+            wp_send_json_error([
+                "message" => __("Unable to delete category."),
+            ]);
+        }
+
+        wp_send_json_success([
+            "message" => __("Category deleted successfully."),
+            "id" => $id,
+        ]);
+    }
+
+    public static function reorder(): void
+    {
+        self::verifyAjax();
+
+        $ids = isset($_POST["ids"]) ? (array) $_POST["ids"] : [];
+
+        $ids = array_map("absint", $ids);
+        $ids = array_values(array_filter($ids));
+
+        if (!$ids) {
+            wp_send_json_error([
+                "message" => __("No categories provided."),
+            ]);
+        }
+
+        CategoryService::reorder($ids);
+
+        wp_send_json_success([
+            "message" => __("Categories reordered successfully."),
+        ]);
+    }
+
+    private static function verifyAjax(): void
+    {
+        if (!current_user_can("manage_options")) {
+            wp_send_json_error(
+                [
+                    "message" => __("Unauthorized."),
+                ],
+                403
+            );
+        }
+
+        check_ajax_referer("ifm_categories", "nonce");
+    }
+}

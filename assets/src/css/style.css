@@ -1,0 +1,73 @@
+@import "tailwindcss";
+@import "./fadgram-ui/index.css";
+
+@layer base {
+  body {
+    @apply bg-white! dark:bg-gray-900!;
+  }
+  .ifm-wrap {
+    @apply p-2.5 md:p-3;
+  }
+  .ifm-nav {
+    @apply relative flex flex-wrap items-baseline gap-2;
+  }
+
+  .ifm-nav-link {
+    @apply flex items-center gap-1 text-sm! font-semibold! text-gray-500! hover:text-gray-900! px-2.5 py-1 pill;
+    &.active {
+      @apply bg-primary text-white! hover:text-white!;
+    }
+  }
+  .ifm-content {
+    @apply p-2 md:p-3;
+  }
+
+  .ifm-page-title {
+    @apply m-0! mb-3!;
+  }
+  .form-control {
+    @apply form-control!;
+  }
+  .form-select {
+    @apply form-select!;
+  }
+  .form-control,
+  .form-select {
+    min-height: unset !important;
+    &.xs {
+      @apply text-xs! px-2! py-0.5!;
+    }
+
+    &.sm {
+      @apply text-xs! px-3! py-1!;
+      @apply leading-none!;
+      @apply h-9!;
+    }
+
+    &.lg {
+      @apply text-base! px-5! py-2!;
+    }
+
+    &.xl {
+      @apply text-lg! px-6! py-3!;
+    }
+
+    &.xxl {
+      @apply text-xl! px-8! py-4!;
+    }
+
+    &.has-start-icon {
+      @apply ps-8!;
+    }
+
+    &.has-end-icon {
+      @apply pe-8!;
+    }
+  }
+  .pill {
+    @apply pill!;
+  }
+  .toast-container {
+    @apply z-99999999!;
+  }
+}

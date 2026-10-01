@@ -1,0 +1,92 @@
+@utility tabs {
+  --tabs-color: var(--color-gray-500);
+  --tabs-color-hover: var(--color-gray-900);
+  --tabs-bg: transparent;
+  --tabs-bg-hover: var(--color-gray-100);
+  --tabs-active-color: var(--color-primary);
+  --tabs-active-bg: --alpha(var(--color-primary) / 25%);
+  @variant dark {
+    --tabs-color: var(--color-gray-500);
+    --tabs-color-hover: var(--color-white);
+    --tabs-bg: transparent;
+    --tabs-bg-hover: var(--color-gray-900);
+    --tabs-active-color: var(--color-white);
+    --tabs-active-bg: --alpha(var(--color-primary) / 25%);
+  }
+  @apply flex flex-wrap;
+}
+
+@utility tabs-list {
+  @apply flex flex-wrap items-center gap-1 border-b;
+}
+
+@utility tab {
+  @apply relative inline-flex items-center justify-center px-2.5 py-1.5 text-sm font-medium;
+  @apply rounded-t-lg;
+  @apply transition-colors;
+  color: var(--tabs-color);
+  background-color: var(--tabs-bg);
+  &:hover {
+    color: var(--tabs-color-hover);
+    background-color: var(--tabs-bg-hover);
+  }
+
+  &[aria-selected="true"] {
+    color: var(--tabs-active-color);
+    background-color: var(--tabs-active-bg);
+  }
+}
+
+@utility tabs-underline {
+  .tab {
+    @apply rounded-none;
+    &:hover {
+      @apply bg-transparent;
+    }
+    &[aria-selected="true"] {
+      @apply bg-transparent;
+    }
+
+    &[aria-selected="true"]::after {
+      content: "";
+
+      @apply absolute inset-x-0 bottom-0 h-0.5;
+      background-color: var(--tabs-active-color);
+    }
+  }
+}
+
+@utility tabs-pills {
+  --tabs-active-color: var(--color-bg-primary);
+  --tabs-active-bg: var(--color-primary);
+  .tabs-list {
+    @apply border-none;
+  }
+  .tab {
+    @apply rounded-lg;
+  }
+}
+
+@utility tabs-fill {
+  .tab {
+    @apply flex-1;
+  }
+}
+
+@utility tabs-* {
+  --tabs-active-color: --value(--color-*);
+  --tabs-active-bg: --alpha(--value(--color-*) / 25%);
+}
+
+@utility tabs-content {
+  @apply pt-4;
+}
+
+@utility tab-panel {
+  @apply animate-fade-in;
+  @apply hidden;
+
+  &[aria-hidden="false"] {
+    @apply block;
+  }
+}

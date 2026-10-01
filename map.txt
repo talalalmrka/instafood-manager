@@ -1,0 +1,26 @@
+instafood-manager
+    assets
+        src
+        css
+            style.css
+        js
+            pages
+                export.ts
+                import.ts
+                manage-products.ts
+                manage-categories.ts
+            main.ts
+        dist
+            main.js
+            style.css
+    src
+        services
+            ProductService.php
+            CategoryService.php
+        pages
+            Import.php
+            Export.php
+            ManageCategories.php
+            ManageProducts.php
+            FixImages.php
+
