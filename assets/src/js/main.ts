@@ -1,10 +1,15 @@
 import "../css/style.css";
 import Alpine from "alpinejs";
+import { initAjaxForms } from "./helpers/ajax-form";
+import { registerDataTable } from "./components/datatable/alpine";
+import { registerCategoriesPage } from "./pages/categories";
+
+registerDataTable();
+registerCategoriesPage();
 
 // window.Alpine = Alpine;
 
 Alpine.start();
-import { initAjaxForms } from "./helpers/ajax-form";
 initAjaxForms();
 import "./pages/import";
 import "./pages/export";

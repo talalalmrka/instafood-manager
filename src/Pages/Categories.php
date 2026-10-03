@@ -102,6 +102,7 @@ class Categories extends Page
         </tr>
 <?php
     }
+
     public static function datatable(): void
     {
         self::verifyAjax();
