@@ -187,6 +187,9 @@ importers:
       concurrently:
         specifier: ^10.0.5
         version: 10.0.5
+      eruda:
+        specifier: ^3.4.3
+        version: 3.4.3
       fadgram-ui:
         specifier: ^1.0.3
         version: 1.0.3(tailwindcss@4.3.3)
@@ -651,6 +654,9 @@ packages:
   entities@4.5.0:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
     engines: {node: '>=0.12'}
+
+  eruda@3.4.3:
+    resolution: {integrity: sha512-J2TsF4dXSspOXev5bJ6mljv0dRrxj21wklrDzbvPmYaEmVoC+2psylyRi70nUPFh1mTQfIBsSusUtAMZtUN+/w==}
 
   escalade@3.2.0:
     resolution: {integrity: sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==}
@@ -1464,6 +1470,8 @@ snapshots:
       tapable: 2.3.3
 
   entities@4.5.0: {}
+
+  eruda@3.4.3: {}
 
   escalade@3.2.0: {}
 

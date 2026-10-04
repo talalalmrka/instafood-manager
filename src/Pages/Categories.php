@@ -2,11 +2,15 @@
 
 namespace Ifm\Pages;
 
+use Ifm\Generic\Datatable\Column;
+use Ifm\Generic\Datatable\Datatable;
 use Ifm\Generic\Page;
 use Ifm\Services\CategoryService;
+use Override;
 
-class Categories extends Page
+class Categories extends Datatable
 {
+    public static string $key = 'term_id';
 
     public static function icon(): string
     {
@@ -25,82 +29,30 @@ class Categories extends Page
         add_action("wp_ajax_ifm_categories_reorder", [self::class, "reorder"]);
     }
 
-    public static function render(): void
+    public static function columns(): array
     {
-        $nonce = wp_create_nonce("ifm_categories");
-        $categories = CategoryService::all($_REQUEST);
-?>
-        <div class="flex md:items-center flex-col md:flex-row md:justify-between gap-2 mb-3">
-            <div class="btn-group btn-group-xs">
-                <button type="button" role="button" class="btn btn-primary">
-                    <i class="icon bi-plus-lg"></i>
-                </button>
-                <button type="submit" name="deleteSelected" role="button" class="btn btn-red">
-                    <i class="icon bi-trash"></i>
-                </button>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="inline-flex items-center">
-                    <div class="form-control-container">
-                        <span class="start-icon"><i class="icon bi-list"></i></span>
-                        <select name="per_page" id="per_page" class="form-select has-start-icon xs pill">
-                            <?php foreach (per_page_options() as $op): ?>
-                                <option value="<?php echo esc_attr($op['value']); ?>"><?php echo esc_html($op['label']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-                <div class="inline-flex items-center">
-                    <div class="form-control-container">
-                        <span class="start-icon"><i class="icon bi-search"></i></span>
-                        <input type="search" name="search" placeholder="Search..." class="form-control has-start-icon xs pill">
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="table-container">
-            <table class="table table-divide table-striped table-border xs">
-                <thead>
-                    <?php self::headRow(); ?>
-                </thead>
-                <tbody>
-                    <?php if (!empty($categories)): ?>
-                        <?php foreach ($categories as $category): ?>
-                            <tr>
-                                <td>
-                                    <input type="checkbox" name="selected[]" value="<?php echo esc_attr($category->term_id); ?>" placeholder="Enter text">
-                                </td>
-                                <td><?php echo esc_html($category->name); ?></td>
-                                <td><?php echo esc_html($category->slug); ?></td>
-                                <td><?php echo esc_html($category->count); ?></td>
-                                <td></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="5" class="text-center"><?php echo esc_html('No Items!'); ?></td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-                <tfoot>
-                    <?php self::headRow(); ?>
-                </tfoot>
-            </table>
-        </div>
-    <?php
+        return [
+            Column::make('name')
+                ->label(__('Name')),
+            Column::make('slug')
+                ->label(__('Slug')),
+            Column::make('count')
+                ->label(__('Categories'))
+                ->class('text-center'),
+        ];
     }
 
-    public static function headRow()
+    public static function items(): array
     {
-    ?>
-        <tr>
-            <th><input type="checkbox" class="select-all"></th>
-            <th><?php echo esc_html(__("Name")); ?></th>
-            <th><?php echo esc_html(__("Slug")); ?></th>
-            <th><?php echo esc_html(__("Products")); ?></th>
-            <th><?php echo esc_html(__("Actions")); ?></th>
-        </tr>
-<?php
+        $categories = CategoryService::all($_REQUEST);
+        return $categories;
+    }
+
+    public static function render(): void
+    {
+        $nonce = wp_create_nonce("ifm_categories"); ?>
+        <?php self::renderTable(); ?>
+    <?php
     }
 
     public static function datatable(): void

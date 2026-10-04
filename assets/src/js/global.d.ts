@@ -5,6 +5,7 @@
 interface Window {
   Ifm: {
     ajaxUrl: string;
+    nonce?: string;
   };
 
   // toast: (message: string, options?: ToastOptions) => Toast;

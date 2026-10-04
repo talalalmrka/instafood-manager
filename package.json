@@ -30,6 +30,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "alpinejs": "^3.17.4",
     "concurrently": "^10.0.5",
+    "eruda": "^3.4.3",
     "fadgram-ui": "^1.0.3",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",

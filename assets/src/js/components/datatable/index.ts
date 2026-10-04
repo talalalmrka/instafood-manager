@@ -1,21 +1,21 @@
-export { DataTable } from './DataTable';
+export { DataTable } from "./DataTable";
 
 export {
-    executeAction,
-    type DataTableActionContext,
-    type DataTableActionHandler,
-} from './actions';
+  executeAction,
+  type DataTableActionContext,
+  type DataTableActionHandler,
+} from "./actions";
 
-export { renderColumn } from './render';
+export { renderColumn } from "./render";
 
-export { createDataTableTemplate } from './template';
+export { createDataTableTemplate } from "./template";
 
 export type {
-    DataTableAction,
-    DataTableAjaxConfig,
-    DataTableButton,
-    DataTableColumn,
-    DataTableColumnType,
-    DataTableConfig,
-    DataTableRow,
-} from './types';
+  DataTableAction,
+  DataTableAjaxConfig,
+  DataTableButton,
+  DataTableColumn,
+  DataTableColumnType,
+  DataTableConfig,
+  DataTableRow,
+} from "./types";
