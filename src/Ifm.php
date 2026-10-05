@@ -7,6 +7,7 @@ use Ifm\Pages\Export;
 use Ifm\Pages\FixImages;
 use Ifm\Pages\Import;
 use Ifm\Pages\Products;
+use Ifm\Services\ApiService;
 
 class Ifm
 {
@@ -31,6 +32,8 @@ class Ifm
         foreach (self::pages() as $page) {
             $page::boot();
         }
+
+        ApiService::boot();
     }
 
     public static function enqueue_assets(string $hook): void
@@ -92,6 +95,7 @@ class Ifm
 
         wp_localize_script($scriptHandle, "Ifm", [
             "ajaxUrl" => admin_url("admin-ajax.php"),
+            "nonce" => wp_create_nonce('ifm_nonce'),
         ]);
     }
 

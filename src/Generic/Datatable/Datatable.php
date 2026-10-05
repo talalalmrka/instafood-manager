@@ -10,6 +10,7 @@ use Ifm\Generic\Page;
 use Ifm\Generic\Datatable\Column;
 use Ifm\Generic\Datatable\Button;
 use Ifm\Generic\Datatable\Action;
+use Illuminate\Support\Str;
 
 /**
  * Base class for pages that render a data table.
@@ -65,15 +66,21 @@ abstract class Datatable extends Page
     /**
      * Define the table items.
      *
-     * @return array
+     * @return \Illuminate\Support\Collection
      */
-    abstract public static function items(): array;
+    abstract public static function items();
     public static function columnsCount(): int
     {
         return sizeof(self::columns()) + 2;
     }
     public static function filters(): void {}
 
+    public static function boot(): void
+    {
+        $suffix = Str::slug(class_basename(static::class), '_');
+        add_action("wp_ajax_datatable_" . $suffix, [static::class, "datatable"]);
+        add_action("wp_ajax_nopriv_datatable_" . $suffix, [static::class, "datatable"]);
+    }
     public static function headRow()
     {
 ?>
@@ -189,5 +196,40 @@ abstract class Datatable extends Page
             </table>
         </div>
 <?php
+    }
+    public static function datatable(): void
+    {
+        // self::verifyAjax();
+
+        $search = request('search', '');
+        $perPage = (int) request('per_page', 20);
+        $orderBy = request('orderby', '');
+        $order = request('order', '');
+
+        wp_send_json_success([
+            'columns' => collect(static::columns())->toArray(),
+            'buttons' => collect(static::buttons())->toArray(),
+            'actions' => collect(static::actions())->toArray(),
+            'filters' => [
+                'search' => $search,
+                'per_page' => $perPage,
+                'orderby' => $orderBy,
+                'order' => $order,
+            ],
+            'items' => collect(static::items())->toArray(),
+        ]);
+    }
+    public static function verifyAjax(): void
+    {
+        if (!current_user_can(static::capability())) {
+            wp_send_json_error(
+                [
+                    "message" => __("Unauthorized."),
+                ],
+                403
+            );
+        }
+
+        check_ajax_referer("ifm_nonce", "nonce");
     }
 }

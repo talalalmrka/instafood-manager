@@ -226,3 +226,12 @@ if (!function_exists('per_page_options')) {
         ]);
     }
 }
+
+if (!function_exists('request')) {
+    function request(string $key, mixed $default = null)
+    {
+        return isset($_REQUEST[$key])
+            ? sanitize_text_field(wp_unslash($_REQUEST[$key]))
+            : $default;
+    }
+}

@@ -18,7 +18,8 @@ class Categories extends Datatable
     }
     public static function boot(): void
     {
-        add_action("wp_ajax_ifm_categories_datatable", [self::class, "datatable"]);
+        parent::boot();
+        // add_action("wp_ajax_ifm_categories_datatable", [self::class, "datatable"]);
 
         add_action("wp_ajax_ifm_category_create", [self::class, "create"]);
 
@@ -27,6 +28,12 @@ class Categories extends Datatable
         add_action("wp_ajax_ifm_category_delete", [self::class, "delete"]);
 
         add_action("wp_ajax_ifm_categories_reorder", [self::class, "reorder"]);
+
+        add_action('wp_ajax_cats', [self::class, 'cats']);
+        add_action('wp_ajax_nopriv_cats', [self::class, 'cats']);
+
+        add_action('wp_ajax_routes', [self::class, 'routes']);
+        add_action('wp_ajax_nopriv_routes', [self::class, 'routes']);
     }
 
     public static function columns(): array
@@ -41,10 +48,13 @@ class Categories extends Datatable
                 ->class('text-center'),
         ];
     }
-
-    public static function items(): array
+    /**
+     * get items
+     * @return \Illuminate\Support\Collection
+     */
+    public static function items()
     {
-        $categories = CategoryService::all($_REQUEST);
+        $categories = CategoryService::paginate($_REQUEST);
         return $categories;
     }
 
@@ -55,7 +65,7 @@ class Categories extends Datatable
     <?php
     }
 
-    public static function datatable(): void
+    /*public static function datatable(): void
     {
         self::verifyAjax();
 
@@ -205,7 +215,7 @@ class Categories extends Datatable
         ]);
     }
 
-    private static function verifyAjax(): void
+    public static function verifyAjax(): void
     {
         if (!current_user_can("manage_options")) {
             wp_send_json_error(
@@ -216,6 +226,37 @@ class Categories extends Datatable
             );
         }
 
-        check_ajax_referer("ifm_categories", "nonce");
+        check_ajax_referer("ifm_nonce", "nonce");
+    }*/
+
+    public static function cats()
+    {
+        $filters = CategoryService::prepareFilters($_REQUEST);
+        $args = CategoryService::prepareQueryArgs($_REQUEST);
+        $items = CategoryService::all($filters);
+        $total_items = CategoryService::total($filters);
+        $total_pages = CategoryService::totalPages($filters);
+        $current_page = data_get($filters, 'page');
+        $per_page = data_get($filters, 'per_page');
+
+        wp_send_json_success([
+            'filters'    => $filters,
+            'args'       => $args,
+            'items'      => $items,
+            'pagination' => [
+                'total_items'  => $total_items,
+                'total_pages'  => $total_pages,
+                'current_page' => $current_page,
+                'per_page'     => $per_page,
+            ]
+        ]);
+    }
+
+    public static function routes()
+    {
+        $routes = rest_get_server()->get_routes();
+        wp_send_json_success([
+            'routes' => $routes,
+        ]);
     }
 }

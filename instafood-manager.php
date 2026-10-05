@@ -12,7 +12,7 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-
+// define('WP_DEBUG', true);
 define('IFM_DEV_MODE', true);
 define('IFM_PLUGIN_FILE', __FILE__);
 define('IFM_PLUGIN_DIR', plugin_dir_path(__FILE__));
