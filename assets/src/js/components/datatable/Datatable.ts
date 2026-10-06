@@ -1,5 +1,5 @@
 import type { DataTableConfig, DataTableRow } from "./types";
-
+import { ajaxUrl, ajaxNonce } from "../../helpers/globals";
 export class DataTable<T extends DataTableRow = DataTableRow> {
   public readonly config: DataTableConfig<T>;
 
@@ -185,8 +185,8 @@ export class DataTable<T extends DataTableRow = DataTableRow> {
     body.set("per_page", String(this.perPage));
     body.set("search", this.search);
 
-    if (this.config.ajax.nonce) {
-      body.set("nonce", this.config.ajax.nonce);
+    if (ajaxNonce) {
+      body.set("nonce", ajaxNonce);
     }
 
     if (this.sortBy) {
@@ -194,7 +194,7 @@ export class DataTable<T extends DataTableRow = DataTableRow> {
       body.set("sort_direction", this.sortDirection);
     }
 
-    const response = await fetch(window.Ifm.ajaxUrl, {
+    const response = await fetch(ajaxUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",

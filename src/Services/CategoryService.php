@@ -14,8 +14,8 @@ class CategoryService
             "orderby"  => "",
             "order"    => "",
             "search"   => "",
-            "per_page" => -1,
-            "page"     => 1,
+            // "per_page" => -1,
+            // "page"     => 1,
         ];
 
         // Merge passed filters into defaults
@@ -28,58 +28,39 @@ class CategoryService
      */
     public static function prepareQueryArgs(array $filters = []): array
     {
-        // Merge passed filters into defaults
-        $parsed_filters = self::prepareFilters($filters);
-
-        $args = [
+        $defaults = [
             "taxonomy"   => IFM_ITEM_TAXONOMY,
             "hide_empty" => false,
-            // "orderby"    => sanitize_key($parsed_filters["orderby"]),
-            // "order"      => sanitize_key($parsed_filters["order"]),
         ];
+        $args = wp_parse_args($filters, $defaults);
 
-        $search_term = sanitize_text_field($parsed_filters["search"]);
-        if ($search_term !== "") {
-            $args["search"] = $search_term;
+        $search = sanitize_text_field(data_get($filters, 'search'));
+        if ($search !== "") {
+            $args["search"] = $search;
         }
 
-        $order_by = sanitize_text_field($parsed_filters["orderby"]);
-        if ($order_by !== "") {
-            $args["order_by"] = $order_by;
+        $orderby = sanitize_text_field(data_get($filters, 'orderby'));
+        if ($orderby !== "") {
+            $args["orderby"] = $orderby;
         }
 
-        $order = sanitize_text_field($parsed_filters["order"]);
+        $order = sanitize_text_field(data_get($filters, 'order'));
         if ($order !== "") {
             $args["order"] = $order;
         }
 
-        return [
-            'args'     => $args,
-            'per_page' => (int) $parsed_filters["per_page"],
-            'page'     => max(1, (int) $parsed_filters["page"]),
-        ];
+        return $args;
     }
 
     /**
      * @param array $filters
-     * @return \Illuminate\Support\Collection
+     * @return \Ifm\Collections\PaginatedCollection
      */
     public static function all(array $filters = [])
     {
-        $prepared = self::prepareQueryArgs($filters);
-        $args     = $prepared['args'];
-        $per_page = $prepared['per_page'];
-        $page     = $prepared['page'];
-
-        // Handle Pagination Parameters
-        if ($per_page > 0) {
-            $args["number"] = $per_page;
-            $args["offset"] = ($page - 1) * $per_page;
-        }
-
-        // Fetch items
+        $args = self::prepareQueryArgs($filters);
         $terms = get_terms($args);
-        return is_wp_error($terms) ? collect() : collect($terms);
+        return is_wp_error($terms) ? pcollect() : pcollect($terms);
     }
 
 

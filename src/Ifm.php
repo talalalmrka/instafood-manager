@@ -93,7 +93,7 @@ class Ifm
             );
         }
 
-        wp_localize_script($scriptHandle, "Ifm", [
+        wp_localize_script($scriptHandle, "ifm", [
             "ajaxUrl" => admin_url("admin-ajax.php"),
             "nonce" => wp_create_nonce('ifm_nonce'),
         ]);

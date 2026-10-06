@@ -6,13 +6,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use Ifm\Pages\Categories;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
 
 class ApiService
 {
-    protected const NAMESPACE = 'ifm/v1';
+    protected const NAMESPACE = 'ifm';
 
     public static function boot(): void
     {
@@ -24,6 +25,11 @@ class ApiService
         register_rest_route(static::NAMESPACE, '/categories', [
             'methods' => WP_REST_Server::READABLE,
             'callback' => [static::class, 'categories'],
+            'permission_callback' => '__return_true',
+        ]);
+        register_rest_route(static::NAMESPACE, '/categories/datatable', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => [Categories::class, 'datatable'],
             'permission_callback' => '__return_true',
         ]);
 
@@ -47,9 +53,13 @@ class ApiService
 
     public static function categories(WP_REST_Request $request): WP_REST_Response
     {
+        $filters = $request->get_params();
+        $perPage = $request->get_param('per_page');
+        $page = $request->get_param('page') ?? 1;
+        $data = CategoryService::all($filters)->paginate($perPage, $page);
         return new WP_REST_Response([
             'success' => true,
-            'data' => CategoryService::paginate($request->get_params()),
+            'data' => $data,
         ]);
     }
 

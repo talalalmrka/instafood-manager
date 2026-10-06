@@ -25,6 +25,7 @@ class Button implements Arrayable
         public ?string $label = null,
         public ?string $icon = null,
         public string $class = '',
+        public bool $requiresSelection = false,
     ) {}
     /**
      * Create a new column instance.
@@ -77,6 +78,19 @@ class Button implements Arrayable
         return $this;
     }
 
+    /**
+     * Button requires selection.
+     *
+     * @param bool $requiresSelection
+     * @return $this
+     */
+    public function requiresSelection(bool $requiresSelection = true)
+    {
+        $this->requiresSelection = $requiresSelection;
+
+        return $this;
+    }
+
 
 
     /**
@@ -120,6 +134,7 @@ class Button implements Arrayable
             'label' => $this->getLabel(),
             'icon' => $this->icon,
             'class' => $this->getClassName(),
+            'requiresSelection' => $this->requiresSelection,
         ];
     }
 }

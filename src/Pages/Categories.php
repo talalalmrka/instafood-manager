@@ -10,7 +10,7 @@ use Override;
 
 class Categories extends Datatable
 {
-    public static string $key = 'term_id';
+    public static string $primaryKey = 'term_id';
 
     public static function icon(): string
     {
@@ -54,14 +54,17 @@ class Categories extends Datatable
      */
     public static function items()
     {
-        $categories = CategoryService::paginate($_REQUEST);
+        $categories = CategoryService::all($_REQUEST);
         return $categories;
     }
 
     public static function render(): void
     {
-        $nonce = wp_create_nonce("ifm_categories"); ?>
-        <?php self::renderTable(); ?>
+        $nonce = wp_create_nonce("ifm_categories");
+        // self::dump(static::datatableOptions());
+?>
+        <?php self::renderTable();
+        ?>
     <?php
     }
 

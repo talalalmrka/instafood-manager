@@ -3,7 +3,7 @@
 // import { Toast } from "./helpers/toast";
 
 interface Window {
-  Ifm: {
+  ifm: {
     ajaxUrl: string;
     nonce?: string;
   };

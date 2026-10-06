@@ -4,6 +4,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use Ifm\Collections\PaginatedCollection;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
@@ -161,7 +162,7 @@ if (!function_exists('dump')) {
     {
         ob_start();
 ?>
-        <pre><code><?php print_r($data); ?></code></pre>
+        <pre class="fg-code"><code><?php print_r($data); ?></code></pre>
 <?php
         if ($return) {
             return ob_get_clean();
@@ -233,5 +234,12 @@ if (!function_exists('request')) {
         return isset($_REQUEST[$key])
             ? sanitize_text_field(wp_unslash($_REQUEST[$key]))
             : $default;
+    }
+}
+
+if (!function_exists('pcollect')) {
+    function pcollect(array $items = [])
+    {
+        return new PaginatedCollection($items);
     }
 }

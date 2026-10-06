@@ -105,7 +105,7 @@ abstract class Page implements GenericPage
     public static function dump(mixed $data)
     {
         ?>
-        <pre><code><?php print_r($data); ?></code></pre>
+        <pre class="fg-code"><code><?php print_r($data); ?></code></pre>
 <?php
     }
 }
