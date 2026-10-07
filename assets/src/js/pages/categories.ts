@@ -1,5 +1,4 @@
 import Alpine from 'alpinejs';
-
 import {
     DataTable,
     executeAction,
@@ -27,7 +26,7 @@ export function registerCategoriesPage(): void {
 
                 ajax: {
                     action: 'ifm_categories_datatable',
-                    nonce: window.Ifm.nonce,
+                    nonce: window.ifm.nonce,
                 },
 
                 columns: [

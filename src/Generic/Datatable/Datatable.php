@@ -2,8 +2,8 @@
 
 namespace Ifm\Generic\Datatable;
 
-if (!defined('ABSPATH')) {
-    exit;
+if (!defined("ABSPATH")) {
+  exit();
 }
 
 use Ifm\Generic\Page;
@@ -19,91 +19,95 @@ use Illuminate\Support\Str;
  */
 abstract class Datatable extends Page
 {
-    public static string $primaryKey = 'id';
+  public static string $primaryKey = "id";
 
-    /**
-     * Define the table columns.
-     *
-     * @return Column[]
-     */
-    abstract public static function columns(): array;
+  /**
+   * Define the table columns.
+   *
+   * @return Column[]
+   */
+  abstract public static function columns(): array;
 
-    /**
-     * Define the table buttons.
-     *
-     * @return Button[]
-     */
-    public static function buttons(): array
-    {
-        return [
-            Button::make('create')
-                ->icon('bi-plus-lg')
-                ->label(__('Create'))
-                ->class('btn-green'),
-            Button::make('deleteSelected')
-                ->icon('bi-trash')
-                ->label(__('Delete selected'))
-                ->requiresSelection()
-                ->class('btn-red'),
-        ];
-    }
+  /**
+   * Define the table buttons.
+   *
+   * @return Button[]
+   */
+  public static function buttons(): array
+  {
+    return [
+      Button::make("create")
+        ->icon("bi-plus-lg")
+        ->label(__("Create"))
+        ->class("btn-green"),
+      Button::make("deleteSelected")
+        ->icon("bi-trash")
+        ->label(__("Delete selected"))
+        ->requiresSelection()
+        ->class("btn-red"),
+    ];
+  }
 
-    /**
-     * Define the row actions.
-     *
-     * @return Action[]
-     */
-    public static function actions()
-    {
-        return [
-            Action::make('edit')
-                ->icon('bi-pencil-square')
-                ->label(__('Edit')),
-            Action::make('delete')
-                ->icon('bi-trash')
-                ->label(__('Delete')),
-        ];
-    }
+  /**
+   * Define the row actions.
+   *
+   * @return Action[]
+   */
+  public static function actions()
+  {
+    return [
+      Action::make("edit")
+        ->icon("bi-pencil-square")
+        ->label(__("Edit")),
+      Action::make("delete")
+        ->icon("bi-trash")
+        ->label(__("Delete")),
+    ];
+  }
 
-
-    /**
-     * Define the table items.
-     *
-     * @return \Ifm\Collections\PaginatedCollection
-     */
-    abstract public static function items();
-    public static function columnsCount(): int
-    {
-        return sizeof(self::columns()) + 2;
-    }
-    public static function filters(): void {}
-    /**
-     * set ajax action
-     * @return string
-     */
-    public static function ajaxAction()
-    {
-        $suffix = Str::slug(class_basename(static::class), '_');
-        return 'datatable_' . $suffix;
-    }
-    public static function boot(): void
-    {
-        add_action("wp_ajax_" . static::ajaxAction(), [static::class, "datatable"]);
-        add_action("wp_ajax_nopriv_" . static::ajaxAction(), [static::class, "datatable"]);
-    }
-    public static function headRow()
-    {
-?>
+  /**
+   * Define the table items.
+   *
+   * @return \Ifm\Collections\PaginatedCollection
+   */
+  abstract public static function items();
+  public static function columnsCount(): int
+  {
+    return sizeof(self::columns()) + 2;
+  }
+  public static function filters(): void
+  {
+  }
+  /**
+   * set ajax action
+   * @return string
+   */
+  public static function ajaxAction()
+  {
+    $suffix = Str::slug(class_basename(static::class), "_");
+    return "datatable_" . $suffix;
+  }
+  public static function boot(): void
+  {
+    add_action("wp_ajax_" . static::ajaxAction(), [static::class, "datatable"]);
+    add_action("wp_ajax_nopriv_" . static::ajaxAction(), [
+      static::class,
+      "datatable",
+    ]);
+  }
+  public static function headRow()
+  {
+    ?>
         <tr>
             <th><input type="checkbox" x-model="selectAll" class="select-all"></th>
             <template x-for="col in columns">
                 <th :class="col.headClass" x-html="col.label"></th>
             </template>
-            <th><?php echo esc_html(__('Actions')) ?></th>
+            <th><?php echo esc_html(__("Actions")); ?></th>
         </tr>
     <?php
-    }
-    /* public static function headRow()
+  }
+  /* public static function headRow()
     {
 ?>
         <tr>
@@ -118,7 +122,7 @@ abstract class Datatable extends Page
     <?php
     } */
 
-    /* public static function renderButtons()
+  /* public static function renderButtons()
     {
     ?>
         <div class="btn-group btn-group-xs">
@@ -130,24 +134,34 @@ abstract class Datatable extends Page
         </div>
     <?php
     } */
-    public static function renderButtons()
-    {
+  public static function renderButtons()
+  {
     ?>
         <div class="btn-group btn-group-xs">
 
             <?php foreach (self::buttons() as $button):
-                $requiresSelectionAttr = $button->requiresSelection ? " :disabled=\"!selected.length\"" : "";
-            ?>
-                <button type="button" role="button" title="<?php echo esc_attr($button->getLabel()); ?>" x-on:click="onButtonClicked('<?php echo esc_attr($button->click) ?>')" class="<?php echo esc_attr(cssClasses('btn', $button->getClassName())); ?>" <?php echo $requiresSelectionAttr; ?>>
-                    <i class="<?php echo esc_attr(cssClasses('icon', $button->icon)); ?>"></i>
+              $requiresSelectionAttr = $button->requiresSelection
+                ? " :disabled=\"!selected.length\""
+                : ""; ?>
+                <button type="button" role="button" title="<?php echo esc_attr(
+                  $button->getLabel()
+                ); ?>" x-on:click="onButtonClicked('<?php echo esc_attr(
+  $button->click
+); ?>')" class="<?php echo esc_attr(
+  cssClasses("btn", $button->getClassName())
+); ?>" <?php echo $requiresSelectionAttr; ?>>
+                    <i class="<?php echo esc_attr(
+                      cssClasses("icon", $button->icon)
+                    ); ?>"></i>
                 </button>
-            <?php endforeach; ?>
+            <?php
+            endforeach; ?>
         </div>
     <?php
-    }
+  }
 
-    public static function renderFilters()
-    {
+  public static function renderFilters()
+  {
     ?>
         <div class="flex items-center gap-2">
             <?php self::filters(); ?>
@@ -156,7 +170,11 @@ abstract class Datatable extends Page
                     <span class="start-icon"><i class="icon bi-list"></i></span>
                     <select x-model="filters.per_page" id="per_page" class="form-select has-start-icon xs pill">
                         <?php foreach (per_page_options() as $op): ?>
-                            <option value="<?php echo esc_attr($op['value']); ?>"><?php echo esc_html($op['label']); ?></option>
+                            <option value="<?php echo esc_attr(
+                              $op["value"]
+                            ); ?>"><?php echo esc_html(
+  $op["label"]
+); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -164,13 +182,15 @@ abstract class Datatable extends Page
             <div class="inline-flex items-center">
                 <div class="form-control-container">
                     <span class="start-icon"><i class="icon bi-search"></i></span>
-                    <input type="search" x-model="filters.search" placeholder="<?php echo esc_attr('Search...') ?>" class="form-control has-start-icon xs pill">
+                    <input type="search" x-model="filters.search" placeholder="<?php echo esc_attr(
+                      "Search..."
+                    ); ?>" class="form-control has-start-icon xs pill">
                 </div>
             </div>
         </div>
     <?php
-    }
-    /* public static function renderFilters()
+  }
+  /* public static function renderFilters()
     {
     ?>
         <div class="flex items-center gap-2">
@@ -194,12 +214,14 @@ abstract class Datatable extends Page
         </div>
     <?php
     } */
-    public static function renderRows()
-    {
+  public static function renderRows()
+  {
     ?>
 
         <tr x-show="!loading && !items.length">
-            <td colspan="<?php echo esc_attr(static::columnsCount()) ?>" class="text-center"><?php echo esc_html('No Items!'); ?></td>
+            <td colspan="<?php echo esc_attr(
+              static::columnsCount()
+            ); ?>" class="text-center"><?php echo esc_html("No Items!"); ?></td>
         </tr>
         <template x-for="item in items">
             <tr>
@@ -217,8 +239,8 @@ abstract class Datatable extends Page
             </tr>
         </template>
     <?php
-    }
-    /* public static function renderRows()
+  }
+  /* public static function renderRows()
     {
     ?>
         <?php if (!empty(static::items())): ?>
@@ -256,13 +278,15 @@ abstract class Datatable extends Page
         <?php endif; ?>
     <?php
     } */
-    /**
-     * Render the data table.
-     */
-    public static function renderTable(): void
-    {
+  /**
+   * Render the data table.
+   */
+  public static function renderTable(): void
+  {
     ?>
-        <div x-data="Datatable(<?php echo esc_attr(json_encode(static::datatableOptions())) ?>)">
+        <div x-data="Datatable(<?php echo esc_attr(
+          json_encode(static::datatableOptions())
+        ); ?>)">
             <div class="flex md:items-center flex-col md:flex-row md:justify-between gap-2 mb-3">
                 <?php self::renderButtons(); ?>
                 <?php self::renderFilters(); ?>
@@ -272,8 +296,7 @@ abstract class Datatable extends Page
                     <thead>
                         <?php self::headRow(); ?>
                     </thead>
-                    <tbody>
-                        <?php self::renderRows(); ?>
+                    <tbody x-html="rows">
                     </tbody>
                     <tfoot>
                         <?php self::headRow(); ?>
@@ -285,9 +308,9 @@ abstract class Datatable extends Page
             </span>
         </div>
     <?php
-    }
-    public static function renderTablee(): void
-    {
+  }
+  public static function renderTablee(): void
+  {
     ?>
         <div class="flex md:items-center flex-col md:flex-row md:justify-between gap-2 mb-3">
             <?php self::renderButtons(); ?>
@@ -307,123 +330,123 @@ abstract class Datatable extends Page
             </table>
         </div>
 <?php
-    }
-    /**
-     * get columns
-     * @return \Illuminate\Support\Collection
-     */
-    public static function getColumns()
-    {
-        $columns = static::columns();
-        return !$columns instanceof Collection ? collect($columns) : $columns;
+  }
+  /**
+   * get columns
+   * @return \Illuminate\Support\Collection
+   */
+  public static function getColumns()
+  {
+    $columns = static::columns();
+    return !$columns instanceof Collection ? collect($columns) : $columns;
+  }
+
+  /**
+   * get buttons
+   * @return \Illuminate\Support\Collection
+   */
+  public static function getButtons()
+  {
+    $buttons = static::buttons();
+    return !$buttons instanceof Collection ? collect($buttons) : $buttons;
+  }
+
+  /**
+   * get actions
+   * @return \Illuminate\Support\Collection
+   */
+  public static function getActions()
+  {
+    $actions = static::actions();
+    return !$actions instanceof Collection ? collect($actions) : $actions;
+  }
+
+  /**
+   * get filters
+   * @return array
+   */
+  public static function getFilters()
+  {
+    $search = request("search", "");
+    $perPage = (int) request("per_page", 15);
+    $page = (int) request("page", 1);
+    $orderBy = request("orderby", "");
+    $order = request("order", "");
+    return [
+      "search" => $search,
+      "per_page" => $perPage,
+      "page" => $page,
+      "orderby" => $orderBy,
+      "order" => $order,
+    ];
+  }
+
+  /**
+   * alpine datatable options
+   * @return array
+   */
+  public static function datatableOptions()
+  {
+    return [
+      "primaryKey" => static::$primaryKey,
+      "ajaxAction" => static::ajaxAction(),
+      "filters" => static::getFilters(),
+      "columns" => static::getColumns()->toArray(),
+      "buttons" => static::getButtons()->toArray(),
+      "actions" => static::getActions()->toArray(),
+    ];
+  }
+
+  public static function datatableData()
+  {
+    $perPage = request("per_page");
+    $page = request("paged", 1);
+    $data = static::items()->paginate($perPage, $page);
+    $items = $data->items();
+    return [
+      "items" => $items,
+      "pagination" => Arr::except($data->toArray(), "data"),
+    ];
+  }
+
+  public static function datatable()
+  {
+    wp_send_json_success(static::datatableData());
+  }
+
+  public static function datatablee(): void
+  {
+    // self::verifyAjax();
+
+    $search = request("search", "");
+    $perPage = (int) request("per_page", 20);
+    $orderBy = request("orderby", "");
+    $order = request("order", "");
+
+    wp_send_json_success([
+      "columns" => collect(static::columns())->toArray(),
+      "buttons" => collect(static::buttons())->toArray(),
+      "actions" => collect(static::actions())->toArray(),
+      "filters" => [
+        "search" => $search,
+        "per_page" => $perPage,
+        "orderby" => $orderBy,
+        "order" => $order,
+      ],
+      "items" => collect(static::items())->toArray(),
+    ]);
+  }
+  public static function verifyAjax(): void
+  {
+    if (!current_user_can(static::capability())) {
+      wp_send_json_error(
+        [
+          "message" => __("Unauthorized."),
+        ],
+        403
+      );
     }
 
-    /**
-     * get buttons
-     * @return \Illuminate\Support\Collection
-     */
-    public static function getButtons()
-    {
-        $buttons = static::buttons();
-        return !$buttons instanceof Collection ? collect($buttons) : $buttons;
-    }
-
-    /**
-     * get actions
-     * @return \Illuminate\Support\Collection
-     */
-    public static function getActions()
-    {
-        $actions = static::actions();
-        return !$actions instanceof Collection ? collect($actions) : $actions;
-    }
-
-    /**
-     * get filters
-     * @return array
-     */
-    public static function getFilters()
-    {
-        $search = request('search', '');
-        $perPage = (int) request('per_page', 15);
-        $page = (int) request('page', 1);
-        $orderBy = request('orderby', '');
-        $order = request('order', '');
-        return [
-            'search' => $search,
-            'per_page' => $perPage,
-            'page' => $page,
-            'orderby' => $orderBy,
-            'order' => $order,
-        ];
-    }
-
-    /**
-     * alpine datatable options
-     * @return array
-     */
-    public static function datatableOptions()
-    {
-        return [
-            'primaryKey' => static::$primaryKey,
-            'ajaxAction' => static::ajaxAction(),
-            'filters' => static::getFilters(),
-            'columns' => static::getColumns()->toArray(),
-            'buttons' => static::getButtons()->toArray(),
-            'actions' => static::getActions()->toArray(),
-        ];
-    }
-
-    public static function datatableData()
-    {
-        $perPage = request('per_page');
-        $page = request('paged', 1);
-        $data = static::items()->paginate($perPage, $page);
-        $items = $data->items();
-        return [
-            'items' => $items,
-            'pagination' => Arr::except($data->toArray(), 'data'),
-        ];
-    }
-
-    public static function datatable()
-    {
-        wp_send_json_success(static::datatableData());
-    }
-
-    public static function datatablee(): void
-    {
-        // self::verifyAjax();
-
-        $search = request('search', '');
-        $perPage = (int) request('per_page', 20);
-        $orderBy = request('orderby', '');
-        $order = request('order', '');
-
-        wp_send_json_success([
-            'columns' => collect(static::columns())->toArray(),
-            'buttons' => collect(static::buttons())->toArray(),
-            'actions' => collect(static::actions())->toArray(),
-            'filters' => [
-                'search' => $search,
-                'per_page' => $perPage,
-                'orderby' => $orderBy,
-                'order' => $order,
-            ],
-            'items' => collect(static::items())->toArray(),
-        ]);
-    }
-    public static function verifyAjax(): void
-    {
-        if (!current_user_can(static::capability())) {
-            wp_send_json_error(
-                [
-                    "message" => __("Unauthorized."),
-                ],
-                403
-            );
-        }
-
-        check_ajax_referer("ifm_nonce", "nonce");
-    }
+    check_ajax_referer("ifm_nonce", "nonce");
+  }
 }

@@ -1,6 +1,7 @@
 import Alpine from "alpinejs";
-import type { DatatableOptions } from "./types";
+import type { DatatableOptions, Item, Column, Action } from "./types";
 import { ajaxNonce, ajaxUrl } from "../helpers/globals";
+import { jsonPretty } from "../helpers/base";
 document.addEventListener("alpine:init", () => {
   Alpine.data("Datatable", (options: DatatableOptions) => ({
     primaryKey: options.primaryKey,
@@ -14,6 +15,9 @@ document.addEventListener("alpine:init", () => {
     selected: [],
     selectAll: false,
     loading: false,
+    get itemsJson(){
+      return jsonPretty(this.items);
+    },
     onButtonClicked(action: string) {
       console.log("Button clicked", action);
     },
@@ -22,6 +26,49 @@ document.addEventListener("alpine:init", () => {
         action: action,
         id: id,
       });
+    },
+    get rows(){
+      if(!this.items.length && !this.loading){
+        const colspan = this.columns.length + 2;
+        return `<tr><td colspan="${colspan}" class="text-center">No items found!</td></tr>`;
+      }
+      return this.items.map((item: Item) => this.rowContent(item)).join("");
+    },
+    rowContent(item: Item){
+      const itemId = item[this.primaryKey] ?? "";
+      return `
+      <tr>
+      <td>
+      <input type="checkbox" x-model="selected" value="${itemId}">
+      </td>
+      ${this.columns.map((column: Column) => this.rawColumn(item, column)).join("")}
+      ${this.actionsColumn(item)}
+      </tr>
+      `.trim();
+    },
+    rawColumn(item: Item, column: Column){
+      return `
+      <td>
+      ${item[column.name] ?? ''}
+      </td>
+      `.trim();
+    },
+    actionsColumn(item: Item){
+      return `
+      <td>
+      <div class="flex items-center justify-center gap-3 md:gap-4">
+      ${this.actions.map((action: Action) => this.actionContent(item, action)).join("")}
+      </div>
+      </td>
+      `.trim();
+    },
+    actionContent(item: Item, action: Action){
+      const itemId = item[this.primaryKey] ?? "";
+      return `
+      <button type="button" x-on:click="onActionClicked('${action.click}', ${itemId})" title="${action.label}" class="text-xs">
+      <i class="icon ${action.icon}"></i>
+      </button>
+      `.trim();
     },
     async load(): Promise<void> {
       this.loading = true;
@@ -72,6 +119,12 @@ document.addEventListener("alpine:init", () => {
     },
     init() {
       this.load();
+      this.$watch('filters', () => {
+        this.load();
+      });
+      this.$watch('selected', (newVal) => {
+        console.log("Selected", newVal);
+      });
     },
   }));
 });
