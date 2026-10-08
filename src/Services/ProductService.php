@@ -2,15 +2,17 @@
 
 namespace Ifm\Services;
 
+use WP_Post;
 
 if (! defined('ABSPATH')) exit;
 
 class ProductService
 {
-
-    private static ?ProductService $instance = null;
-    private $products = [];
-    public static function all(array $filters = []): array
+    /**
+     * @param array $filters
+     * @return \Ifm\Collections\PaginatedCollection
+     */
+    public static function all(array $filters = [])
     {
         $defaults = [
             "no_images" => false,
@@ -28,8 +30,9 @@ class ProductService
         $args = [
             "post_type" => IFM_ITEM_POST_TYPE,
             "post_status" => $filters["status"],
-            "posts_per_page" => (int) $filters["per_page"],
-            "paged" => max(1, (int) $filters["page"]),
+            // "posts_per_page" => (int) $filters["per_page"],
+            "posts_per_page" => -1,
+            // "paged" => max(1, (int) $filters["page"]),
             "orderby" => $filters["orderby"],
             "order" => $filters["order"],
         ];
@@ -64,95 +67,69 @@ class ProductService
             ];
         }
 
-        return get_posts($args);
-    }
-    public function getAllProducts()
-    {
-        if (isset($this->products) && is_array($this->products) && sizeof($this->products) > 0) {
-            return $this->products;
-        }
-        $args = [
-            'posts_per_page' => -1,
-            'post_type'      => IFM_ITEM_POST_TYPE,
-            'post_status'    => 'publish',
-            'orderby' => 'menu_order',
-            'order' => 'ASC',
-        ];
-        $the_query = new \WP_Query($args);
-        if ($the_query->have_posts()) {
-            while ($the_query->have_posts()) {
-                $the_query->the_post();
-                $post_id = get_the_ID();
-                $post_meta = get_post_meta($post_id, IFM_ITEM_META_KEY, true);
+        $products = get_posts($args);
 
-                $product = new \stdClass();
-                $product->ID = get_the_ID();
-                $product->title = get_the_title();
-                $product->meta = $post_meta;
-                if (isset($product->meta)) {
-                    if (isset($product->meta['product_variations']) && is_array($product->meta['product_variations'])) {
-                        /* foreach ($product->meta['product_variations'] as $key => $variation) {
-                            if (isset($variation['price']) && $variation['price'] !== '') {
-                                $product->meta['product_variations'][$key]['price_display'] = PriceUtil::getInstance()->getPriceDisplay($variation['price']);
-                            } else {
-                                $product->meta['product_variations'][$key]['price_display'] = PriceUtil::getInstance()->getPriceDisplay(0);
-                            }
-                        } */
-                    }
-                    if (isset($product->meta['square_photo']) && $product->meta['square_photo'] !== '') {
-                        $product->meta['square_photo_images'] = $this->getProductImages($product->meta['square_photo']);
-                    }
-                    if (isset($product->meta['landscape_photo']) && $product->meta['landscape_photo'] !== '') {
-                        $product->meta['landscape_photo_images'] = $this->getProductImages($product->meta['landscape_photo']);
-                    }
-                }
-                array_push($this->products, $product);
-            }
-        }
-        wp_reset_postdata();
-        wp_reset_query();
-        return $this->products;
+        return is_wp_error($products)
+            ? pcollect()
+            : pcollect($products);
     }
 
-    public function getProductImages(int $id, array $sizes = [
-        'appetit-cover-large',
-        'appetit-cover-medium',
-        'appetit-aquare-large',
-        'appetit-aquare-medium',
-        'appetit-aquare-small'
-    ]): array
+    /**
+     * Find a product by ID.
+     */
+    public static function find(int $id): ?WP_Post
     {
+        $product = get_post($id);
+
+        if (! $product instanceof WP_Post) {
+            return null;
+        }
+
+        if ($product->post_type !== IFM_ITEM_POST_TYPE) {
+            return null;
+        }
+
+        return $product;
+    }
+
+    public static function getProductImages(
+        int $id,
+        array $sizes = [
+            'appetit-cover-large',
+            'appetit-cover-medium',
+            'appetit-aquare-large',
+            'appetit-aquare-medium',
+            'appetit-aquare-small',
+        ]
+    ): array {
         $images = [];
-        if (isset($id) && $id !== '') {
+
+        if ($id > 0) {
             foreach ($sizes as $size) {
-                $image_data = wp_get_attachment_image_src($id, $size);
-                if (is_array($image_data) && isset($image_data[0])) {
-                    $images[$size] = $image_data[0];
+                $imageData = wp_get_attachment_image_src($id, $size);
+
+                if (is_array($imageData) && isset($imageData[0])) {
+                    $images[$size] = $imageData[0];
                 }
             }
         }
+
         return $images;
     }
 
-    public static function getProduct(int $productId)
+    public static function getProduct(int $productId): ?WP_Post
     {
-        $postResult = get_post($productId);
-        if ($postResult->post_status !== 'publish') {
-            return false;
+        $product = self::find($productId);
+
+        if (! $product || $product->post_status !== 'publish') {
+            return null;
         }
-        return $postResult;
+
+        return $product;
     }
 
     public static function getProductMeta(int $productId)
     {
         return get_post_meta($productId, IFM_ITEM_META_KEY, true);
-    }
-
-    public static function getInstance()
-    {
-        if (self::$instance == null) {
-            self::$instance = new ProductService();
-        }
-        return self::$instance;
     }
 }

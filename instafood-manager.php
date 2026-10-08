@@ -12,8 +12,8 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-// define('WP_DEBUG', true);
 define('IFM_DEV_MODE', true);
+define('IFM_ERUDA', false);
 define('IFM_PLUGIN_FILE', __FILE__);
 define('IFM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('IFM_PLUGIN_URL', plugin_dir_url(__FILE__));

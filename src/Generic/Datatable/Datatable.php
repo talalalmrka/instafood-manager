@@ -19,7 +19,8 @@ use Illuminate\Support\Str;
  */
 abstract class Datatable extends Page
 {
-  public static string $primaryKey = "id";
+  public static string $primaryKey = "ID";
+  public static string $class = "";
 
   /**
    * Define the table columns.
@@ -71,13 +72,14 @@ abstract class Datatable extends Page
    * @return \Ifm\Collections\PaginatedCollection
    */
   abstract public static function items();
+
   public static function columnsCount(): int
   {
-    return sizeof(self::columns()) + 2;
+    $additionalCols = !empty(static::actions()) ? 2 : 1;
+    return sizeof(self::columns()) + $additionalCols;
   }
-  public static function filters(): void
-  {
-  }
+  public static function filters(): void {}
+
   /**
    * set ajax action
    * @return string
@@ -87,6 +89,7 @@ abstract class Datatable extends Page
     $suffix = Str::slug(class_basename(static::class), "_");
     return "datatable_" . $suffix;
   }
+
   public static function boot(): void
   {
     add_action("wp_ajax_" . static::ajaxAction(), [static::class, "datatable"]);
@@ -94,242 +97,6 @@ abstract class Datatable extends Page
       static::class,
       "datatable",
     ]);
-  }
-  public static function headRow()
-  {
-    ?>
-        <tr>
-            <th><input type="checkbox" x-model="selectAll" class="select-all"></th>
-            <template x-for="col in columns">
-                <th :class="col.headClass" x-html="col.label"></th>
-            </template>
-            <th><?php echo esc_html(__("Actions")); ?></th>
-        </tr>
-    <?php
-  }
-  /* public static function headRow()
-    {
-?>
-        <tr>
-            <th><input type="checkbox" class="select-all"></th>
-            <?php foreach (static::columns() as $col): ?>
-                <th class="<?php echo esc_attr(cssClasses($col->getHeadClass())) ?>">
-                    <?php echo esc_html($col->getLabel()); ?>
-                </th>
-            <?php endforeach; ?>
-            <th><?php echo esc_html(__('Actions')) ?></th>
-        </tr>
-    <?php
-    } */
-
-  /* public static function renderButtons()
-    {
-    ?>
-        <div class="btn-group btn-group-xs">
-            <template x-for="button in buttons">
-                <button type="button" :title="button.label" class="btn" :class="button.class" x-on:click="onButtonClicked(button.click)">
-                    <i class="icon" :class="button.icon"></i>
-                </button>
-            </template>
-        </div>
-    <?php
-    } */
-  public static function renderButtons()
-  {
-    ?>
-        <div class="btn-group btn-group-xs">
-
-            <?php foreach (self::buttons() as $button):
-              $requiresSelectionAttr = $button->requiresSelection
-                ? " :disabled=\"!selected.length\""
-                : ""; ?>
-                <button type="button" role="button" title="<?php echo esc_attr(
-                  $button->getLabel()
-                ); ?>" x-on:click="onButtonClicked('<?php echo esc_attr(
-  $button->click
-); ?>')" class="<?php echo esc_attr(
-  cssClasses("btn", $button->getClassName())
-); ?>" <?php echo $requiresSelectionAttr; ?>>
-                    <i class="<?php echo esc_attr(
-                      cssClasses("icon", $button->icon)
-                    ); ?>"></i>
-                </button>
-            <?php
-            endforeach; ?>
-        </div>
-    <?php
-  }
-
-  public static function renderFilters()
-  {
-    ?>
-        <div class="flex items-center gap-2">
-            <?php self::filters(); ?>
-            <div class="inline-flex items-center">
-                <div class="form-control-container">
-                    <span class="start-icon"><i class="icon bi-list"></i></span>
-                    <select x-model="filters.per_page" id="per_page" class="form-select has-start-icon xs pill">
-                        <?php foreach (per_page_options() as $op): ?>
-                            <option value="<?php echo esc_attr(
-                              $op["value"]
-                            ); ?>"><?php echo esc_html(
-  $op["label"]
-); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            <div class="inline-flex items-center">
-                <div class="form-control-container">
-                    <span class="start-icon"><i class="icon bi-search"></i></span>
-                    <input type="search" x-model="filters.search" placeholder="<?php echo esc_attr(
-                      "Search..."
-                    ); ?>" class="form-control has-start-icon xs pill">
-                </div>
-            </div>
-        </div>
-    <?php
-  }
-  /* public static function renderFilters()
-    {
-    ?>
-        <div class="flex items-center gap-2">
-            <?php self::filters(); ?>
-            <div class="inline-flex items-center">
-                <div class="form-control-container">
-                    <span class="start-icon"><i class="icon bi-list"></i></span>
-                    <select name="per_page" id="per_page" class="form-select has-start-icon xs pill">
-                        <?php foreach (per_page_options() as $op): ?>
-                            <option value="<?php echo esc_attr($op['value']); ?>"><?php echo esc_html($op['label']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            <div class="inline-flex items-center">
-                <div class="form-control-container">
-                    <span class="start-icon"><i class="icon bi-search"></i></span>
-                    <input type="search" name="search" placeholder="Search..." class="form-control has-start-icon xs pill">
-                </div>
-            </div>
-        </div>
-    <?php
-    } */
-  public static function renderRows()
-  {
-    ?>
-
-        <tr x-show="!loading && !items.length">
-            <td colspan="<?php echo esc_attr(
-              static::columnsCount()
-            ); ?>" class="text-center"><?php echo esc_html("No Items!"); ?></td>
-        </tr>
-        <template x-for="item in items">
-            <tr>
-                <td>
-                    <input
-                        x-ref="selectItem"
-                        type="checkbox"
-                        x-model="selected[]"
-                        :value="item[primaryKey]">
-                </td>
-                <template x-for="col in columns">
-                    <td :class="col.class" x-html="item[col.name]"></td>
-                </template>
-                <td></td>
-            </tr>
-        </template>
-    <?php
-  }
-  /* public static function renderRows()
-    {
-    ?>
-        <?php if (!empty(static::items())): ?>
-            <?php foreach (static::items() as $item): ?>
-                <tr>
-                    <td>
-                        <input
-                            x-ref="selectItem"
-                            type="checkbox"
-                            name="selected[]"
-                            value="<?php echo esc_attr(data_get($item, self::$primaryKey)); ?>">
-                    </td>
-                    <?php foreach (static::columns() as $col): ?>
-                        <td class="<?php echo esc_attr(cssClasses($col->getClassName())); ?>"><?php echo esc_html(data_get($item, $col->name)); ?></td>
-                    <?php endforeach; ?>
-                    <td>
-                        <div class="flex items-center gap-2 md:gap-3 justify-center">
-                            <?php foreach (static::actions() as $action): ?>
-                                <button
-                                    type="button"
-                                    title="<?php echo esc_attr($action->getLabel()); ?>"
-                                    class="<?php echo esc_attr(cssClasses($action->getClassName())); ?>"
-                                    x-on:click="action('<?php echo esc_attr(data_get($action, 'click')) ?>', <?php echo esc_attr(data_get($item, self::$primaryKey)); ?>)">
-                                    <i class="<?php echo esc_attr(cssClasses('icon', $action->icon)); ?>"></i>
-                                </button>
-                            <?php endforeach; ?>
-                        </div>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <tr>
-                <td colspan="<?php echo esc_attr(static::columnsCount()) ?>" class="text-center"><?php echo esc_html('No Items!'); ?></td>
-            </tr>
-        <?php endif; ?>
-    <?php
-    } */
-  /**
-   * Render the data table.
-   */
-  public static function renderTable(): void
-  {
-    ?>
-        <div x-data="Datatable(<?php echo esc_attr(
-          json_encode(static::datatableOptions())
-        ); ?>)">
-            <div class="flex md:items-center flex-col md:flex-row md:justify-between gap-2 mb-3">
-                <?php self::renderButtons(); ?>
-                <?php self::renderFilters(); ?>
-            </div>
-            <div class="table-container">
-                <table class="table table-divide table-striped table-border xs">
-                    <thead>
-                        <?php self::headRow(); ?>
-                    </thead>
-                    <tbody x-html="rows">
-                    </tbody>
-                    <tfoot>
-                        <?php self::headRow(); ?>
-                    </tfoot>
-                </table>
-            </div>
-            <span x-show="loading" class="fixed z-50 center-all text-white bg-primary/80 pill px-3">
-                <i class="icon fg-loader-dots-move text-xl leading-0 m-0! p-0!"></i>
-            </span>
-        </div>
-    <?php
-  }
-  public static function renderTablee(): void
-  {
-    ?>
-        <div class="flex md:items-center flex-col md:flex-row md:justify-between gap-2 mb-3">
-            <?php self::renderButtons(); ?>
-            <?php self::renderFilters(); ?>
-        </div>
-        <div class="table-container">
-            <table class="table table-divide table-striped table-border xs">
-                <thead>
-                    <?php self::headRow(); ?>
-                </thead>
-                <tbody>
-                    <?php self::renderRows(); ?>
-                </tbody>
-                <tfoot>
-                    <?php self::headRow(); ?>
-                </tfoot>
-            </table>
-        </div>
-<?php
   }
   /**
    * get columns
@@ -369,13 +136,11 @@ abstract class Datatable extends Page
   {
     $search = request("search", "");
     $perPage = (int) request("per_page", 15);
-    $page = (int) request("page", 1);
     $orderBy = request("orderby", "");
     $order = request("order", "");
     return [
       "search" => $search,
       "per_page" => $perPage,
-      "page" => $page,
       "orderby" => $orderBy,
       "order" => $order,
     ];
@@ -387,10 +152,12 @@ abstract class Datatable extends Page
    */
   public static function datatableOptions()
   {
+    $paged = (int) request("paged", 1);
     return [
       "primaryKey" => static::$primaryKey,
       "ajaxAction" => static::ajaxAction(),
       "filters" => static::getFilters(),
+      "paged" => $paged,
       "columns" => static::getColumns()->toArray(),
       "buttons" => static::getButtons()->toArray(),
       "actions" => static::getActions()->toArray(),
@@ -399,9 +166,10 @@ abstract class Datatable extends Page
 
   public static function datatableData()
   {
+    // return static::items();
     $perPage = request("per_page");
-    $page = request("paged", 1);
-    $data = static::items()->paginate($perPage, $page);
+    $paged = request("paged", 1);
+    $data = static::items()->paginate($perPage, $paged);
     $items = $data->items();
     return [
       "items" => $items,
@@ -411,6 +179,7 @@ abstract class Datatable extends Page
 
   public static function datatable()
   {
+    self::verifyAjax();
     wp_send_json_success(static::datatableData());
   }
 
@@ -436,6 +205,7 @@ abstract class Datatable extends Page
       "items" => collect(static::items())->toArray(),
     ]);
   }
+
   public static function verifyAjax(): void
   {
     if (!current_user_can(static::capability())) {
@@ -448,5 +218,155 @@ abstract class Datatable extends Page
     }
 
     check_ajax_referer("ifm_nonce", "nonce");
+  }
+  public static function headRow()
+  {
+?>
+    <tr>
+      <th><input type="checkbox" x-model="selectAll" class="select-all"></th>
+      <?php foreach (static::columns() as $column): ?>
+        <th class="<?php cssClasses($column->getHeadClass()); ?>">
+          <?php if ($column->sortable): ?>
+            <div x-on:click="sort('<?php echo esc_attr($column->name); ?>')"
+              class="w-full flex items-center gap-1.5 cursor-pointer select-none">
+              <div class="flex-1"><?php echo $column->getLabel(); ?></div>
+              <div class="flex flex-col text-xxs">
+                <i
+                  class="icon bi-chevron-up" :class="sortClass('<?php echo esc_attr($column->name); ?>', 'asc')"></i>
+                <i
+                  class="icon bi-chevron-down" :class="sortClass('<?php echo esc_attr($column->name); ?>', 'desc')"></i>
+              </div>
+            </div>
+          <?php else: ?>
+            <?php echo $column->getLabel(); ?>
+          <?php endif; ?>
+        </th>
+      <?php endforeach; ?>
+      <?php if (!empty(static::actions())): ?>
+        <th><?php echo esc_html(__("Actions")); ?></th>
+      <?php endif; ?>
+    </tr>
+  <?php
+  }
+
+  public static function renderButtons()
+  {
+  ?>
+    <div class="btn-group btn-group-xs">
+      <?php foreach (self::buttons() as $button):
+        $requiresSelectionAttr = $button->requiresSelection
+          ? " :disabled=\"!selected.length\""
+          : ""; ?>
+        <button type="button"
+          role="button"
+          title="<?php echo esc_attr($button->getLabel()); ?>"
+          x-on:click="onButtonClicked('<?php echo esc_attr($button->click); ?>')"
+          class="<?php echo esc_attr(cssClasses("btn", $button->getClassName())); ?>" <?php echo $requiresSelectionAttr; ?>>
+          <i class="<?php echo esc_attr(cssClasses("icon", $button->icon)); ?>"></i>
+        </button>
+      <?php
+      endforeach; ?>
+    </div>
+  <?php
+  }
+
+  public static function renderFilters()
+  {
+  ?>
+    <div class="flex items-center gap-2">
+      <div class="inline-flex items-center">
+        <button
+          x-on:click="resetFilters"
+          type="button"
+          title="<?php echo esc_attr(__('Reset filters')) ?>"
+          class="btn btn-xs btn-outline-secondary pill w-auto inline-flex gap-0!">
+          <i class="icon bi-arrow-repeat w-3 h-3"></i>
+        </button>
+      </div>
+      <?php static::filters(); ?>
+      <div class="inline-flex items-center">
+        <div class="form-control-container">
+          <span class="start-icon"><i class="icon bi-list"></i></span>
+          <select x-model="filters.per_page" id="per_page" class="form-select has-start-icon xs pill">
+            <?php foreach (per_page_options() as $op): ?>
+              <option value="<?php echo esc_attr($op["value"]); ?>"><?php echo esc_html($op["label"]); ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+      </div>
+      <div class="inline-flex items-center">
+        <div class="form-control-container">
+          <span class="start-icon"><i class="icon bi-search"></i></span>
+          <input
+            type="search"
+            x-model="filters.search"
+            placeholder="<?php echo esc_attr("Search..."); ?>"
+            class="form-control has-start-icon xs pill">
+        </div>
+      </div>
+    </div>
+  <?php
+  }
+
+  public static function renderRows()
+  {
+  ?>
+
+    <tr x-show="!loading && !items.length">
+      <td colspan="<?php echo esc_attr(static::columnsCount()); ?>" class="text-center"><?php echo esc_html("No Items!"); ?></td>
+    </tr>
+    <template x-for="item in items">
+      <tr>
+        <td>
+          <input
+            x-ref="selectItem"
+            type="checkbox"
+            x-model="selected[]"
+            :value="item[primaryKey]">
+        </td>
+        <template x-for="col in columns">
+          <td :class="col.class" x-html="item[col.name]"></td>
+        </template>
+        <td></td>
+      </tr>
+    </template>
+  <?php
+  }
+
+  /**
+   * Render the data table.
+   */
+  public static function renderTable(): void
+  {
+  ?>
+    <div x-data="Datatable(<?php echo esc_attr(json_encode(static::datatableOptions())); ?>)">
+      <div class="flex md:items-center flex-col md:flex-row md:justify-between gap-2 mb-3">
+        <?php self::renderButtons(); ?>
+        <?php self::renderFilters(); ?>
+      </div>
+      <div class="table-container">
+        <table class="table table-striped table-divide table-rounded table-border table-auto xs <?php echo esc_attr(cssClasses(static::$class)); ?>">
+          <thead>
+            <?php self::headRow(); ?>
+          </thead>
+          <tbody x-html="rows">
+          </tbody>
+          <tfoot>
+            <?php self::headRow(); ?>
+          </tfoot>
+        </table>
+      </div>
+      <div class="pagination-container pt-3 px-3" x-show="hasPagination()" x-html="paginationHtml"></div>
+      <span x-show="loading" class="fixed z-50 center-all text-white bg-primary/80 pill px-3">
+        <i class="icon fg-loader-dots-move text-xl leading-0 m-0! p-0!"></i>
+      </span>
+    </div>
+<?php
+  }
+
+
+  public static function render(): void
+  {
+    static::renderTable();
   }
 }

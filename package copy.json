@@ -13,6 +13,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.10.1",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.10.1",
   "type": "module",
   "devDependencies": {
     "@iconify-json/bi": "^1.2.7",

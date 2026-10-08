@@ -17,7 +17,7 @@ class Ifm
             Import::class,
             Export::class,
             Categories::class,
-            // Products::class,
+            Products::class,
             // FixImages::class,
         ];
     }
@@ -49,7 +49,7 @@ class Ifm
         if (!in_array($hook, $allowedHooks, true)) {
             return;
         }
-        if (IFM_DEV_MODE) {
+        if (IFM_DEV_MODE && IFM_ERUDA) {
             wp_enqueue_script(
                 "ifm-debug",
                 IFM_PLUGIN_URL . "assets/dist/debug.js",

@@ -4,9 +4,7 @@ namespace Ifm\Pages;
 
 use Ifm\Generic\Datatable\Column;
 use Ifm\Generic\Datatable\Datatable;
-use Ifm\Generic\Page;
 use Ifm\Services\CategoryService;
-use Override;
 
 class Categories extends Datatable
 {
@@ -19,7 +17,6 @@ class Categories extends Datatable
     public static function boot(): void
     {
         parent::boot();
-        // add_action("wp_ajax_ifm_categories_datatable", [self::class, "datatable"]);
 
         add_action("wp_ajax_ifm_category_create", [self::class, "create"]);
 
@@ -40,11 +37,17 @@ class Categories extends Datatable
     {
         return [
             Column::make('name')
-                ->label(__('Name')),
+                ->label(__('Name'))
+                ->sortable(),
             Column::make('slug')
-                ->label(__('Slug')),
+                ->label(__('Slug'))
+                ->sortable(),
+            Column::make('description')
+                ->label(__('Description'))
+                ->sortable(),
             Column::make('count')
-                ->label(__('Categories'))
+                ->label(__('Products'))
+                ->sortable()
                 ->class('text-center'),
         ];
     }
@@ -56,16 +59,6 @@ class Categories extends Datatable
     {
         $categories = CategoryService::all($_REQUEST);
         return $categories;
-    }
-
-    public static function render(): void
-    {
-        $nonce = wp_create_nonce("ifm_categories");
-        // self::dump(static::datatableOptions());
-?>
-        <?php self::renderTable();
-        ?>
-    <?php
     }
 
     /*public static function datatable(): void

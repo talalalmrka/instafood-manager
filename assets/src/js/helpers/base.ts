@@ -106,3 +106,23 @@ export function strSlug(title: string, separator: string = "-"): string {
 export function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+export function dataGet<T = unknown>(
+  object: unknown,
+  path: string,
+  defaultValue: T | null = null,
+): T | null {
+  if (!path) {
+    return object as T;
+  }
+
+  const value = path.split(".").reduce<unknown>((current, key) => {
+    if (current === null || current === undefined) {
+      return undefined;
+    }
+
+    return (current as Record<string, unknown>)[key];
+  }, object);
+
+  return value === undefined ? defaultValue : (value as T);
+}

@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) {
 }
 
 use Ifm\Pages\Categories;
+use Ifm\Pages\Products;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -36,6 +37,23 @@ class ApiService
         register_rest_route(static::NAMESPACE, '/categories/(?P<id>\d+)', [
             'methods' => WP_REST_Server::READABLE,
             'callback' => [static::class, 'category'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        register_rest_route(static::NAMESPACE, '/products', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => [static::class, 'products'],
+            'permission_callback' => '__return_true',
+        ]);
+        register_rest_route(static::NAMESPACE, '/products/datatable', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => [Products::class, 'datatable'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        register_rest_route(static::NAMESPACE, '/products/(?P<id>\d+)', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => [static::class, 'product'],
             'permission_callback' => '__return_true',
         ]);
         /* register_rest_route(static::NAMESPACE, '/products', [
@@ -74,9 +92,13 @@ class ApiService
     }
     public static function products(WP_REST_Request $request): WP_REST_Response
     {
+        $filters = $request->get_params();
+        $perPage = $request->get_param('per_page');
+        $page = $request->get_param('page') ?? 1;
+        $data = ProductService::all($filters)->paginate($perPage, $page);
         return new WP_REST_Response([
             'success' => true,
-            'data' => [],
+            'data' => $data,
         ]);
     }
 
@@ -86,9 +108,7 @@ class ApiService
 
         return new WP_REST_Response([
             'success' => true,
-            'data' => [
-                'id' => $id,
-            ],
+            'data' => ProductService::find($id),
         ]);
     }
 
