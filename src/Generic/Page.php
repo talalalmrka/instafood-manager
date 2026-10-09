@@ -40,6 +40,27 @@ abstract class Page implements GenericPage
         return 'manage_options';
     }
 
+    /**
+     * set ajax action
+     * @return string
+     */
+    public static function ajaxPrefix()
+    {
+        return Str::of(class_basename(static::class))->lower()->slug('_');
+    }
+    /**
+     * register ajax
+     * @param string $action
+     * @param string $callback
+     * @param bool $nopriv default true
+     */
+    public static function registerAjax($action, $callback, $nopriv = true)
+    {
+        add_action('wp_ajax_' . static::ajaxPrefix() . "_" . $action, [static::class, $callback]);
+        if ($nopriv) {
+            add_action('wp_ajax_nopriv_' . static::ajaxPrefix() . "_" . $action, [static::class, $callback]);
+        }
+    }
     public static function renderResult(mixed $result): void
     {
         if (!$result || !is_array($result)) {
@@ -50,7 +71,7 @@ abstract class Page implements GenericPage
         $message = data_get($result, 'message');
         $summary = data_get($result, 'summary', []);
         if ($type === 'error') { ?>
-            <div class="alert alert-error alert-soft sm flex items-center gap-2">
+            <div class="alert-soft-error alert-sm flex items-center gap-2">
                 <div>
                     <i class="icon bi-exclamation-traingle"></i>
                 </div>
@@ -63,7 +84,7 @@ abstract class Page implements GenericPage
         }
         if (!empty($message) || !empty($summary)) {
         ?>
-            <div class="alert alert-success alert-soft sm">
+            <div class="alert-soft-success alert-sm">
                 <?php if (!empty($message)): ?>
                     <p><?php echo esc_html($message); ?></p>
                 <?php endif; ?>
@@ -80,7 +101,7 @@ abstract class Page implements GenericPage
                     </ul>
                 <?php endif; ?>
             </div>
-        <?php
+<?php
         }
     }
 
@@ -104,8 +125,6 @@ abstract class Page implements GenericPage
 
     public static function dump(mixed $data)
     {
-        ?>
-        <pre class="fg-code"><code><?php print_r($data); ?></code></pre>
-<?php
+        dump($data);
     }
 }

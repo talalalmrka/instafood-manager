@@ -71,10 +71,7 @@ class ApiService
 
     public static function categories(WP_REST_Request $request): WP_REST_Response
     {
-        $filters = $request->get_params();
-        $perPage = $request->get_param('per_page');
-        $page = $request->get_param('page') ?? 1;
-        $data = CategoryService::all($filters)->paginate($perPage, $page);
+        $data = CategoryService::paginate($request->get_params());
         return new WP_REST_Response([
             'success' => true,
             'data' => $data,

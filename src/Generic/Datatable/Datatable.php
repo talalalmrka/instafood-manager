@@ -22,6 +22,17 @@ abstract class Datatable extends Page
   public static string $primaryKey = "ID";
   public static string $class = "";
 
+  public static function boot(): void
+  {
+
+    static::registerAjax('items', 'itemsAjax');
+    static::registerAjax('delete', 'delete');
+    // add_action("wp_ajax_" . static::ajaxAction(), [static::class, "datatable"]);
+    // add_action("wp_ajax_nopriv_" . static::ajaxAction(), [
+    //   static::class,
+    //   "datatable",
+    // ]);
+  }
   /**
    * Define the table columns.
    *
@@ -80,24 +91,9 @@ abstract class Datatable extends Page
   }
   public static function filters(): void {}
 
-  /**
-   * set ajax action
-   * @return string
-   */
-  public static function ajaxAction()
-  {
-    $suffix = Str::slug(class_basename(static::class), "_");
-    return "datatable_" . $suffix;
-  }
 
-  public static function boot(): void
-  {
-    add_action("wp_ajax_" . static::ajaxAction(), [static::class, "datatable"]);
-    add_action("wp_ajax_nopriv_" . static::ajaxAction(), [
-      static::class,
-      "datatable",
-    ]);
-  }
+
+
   /**
    * get columns
    * @return \Illuminate\Support\Collection
@@ -155,7 +151,7 @@ abstract class Datatable extends Page
     $paged = (int) request("paged", 1);
     return [
       "primaryKey" => static::$primaryKey,
-      "ajaxAction" => static::ajaxAction(),
+      "ajaxPrefix" => static::ajaxPrefix(),
       "filters" => static::getFilters(),
       "paged" => $paged,
       "columns" => static::getColumns()->toArray(),
@@ -177,9 +173,10 @@ abstract class Datatable extends Page
     ];
   }
 
-  public static function datatable()
+  public static function itemsAjax()
   {
     self::verifyAjax();
+    wp_send_json_success(static::items());
     wp_send_json_success(static::datatableData());
   }
 
@@ -357,7 +354,7 @@ abstract class Datatable extends Page
         </table>
       </div>
       <div class="pagination-container pt-3 px-3" x-show="hasPagination()" x-html="paginationHtml"></div>
-      <span x-show="loading" class="fixed z-50 center-all text-white bg-primary/80 pill px-3">
+      <span x-show="isLoading('items')" class="fixed z-50 center-all text-white bg-primary/80 pill px-3">
         <i class="icon fg-loader-dots-move text-xl leading-0 m-0! p-0!"></i>
       </span>
     </div>

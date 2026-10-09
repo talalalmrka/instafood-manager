@@ -57,10 +57,35 @@ class Categories extends Datatable
      */
     public static function items()
     {
-        $categories = CategoryService::all($_REQUEST);
+        $categories = CategoryService::paginate($_REQUEST);
         return $categories;
     }
+    public static function delete(): void
+    {
+        self::verifyAjax();
 
+        $id = isset($_POST["id"]) ? absint($_POST["id"]) : 0;
+
+        if (!$id) {
+            wp_send_json_error([
+                "message" => __("Invalid category."),
+            ]);
+        }
+        wp_send_json_success([
+            "message" => __("Category deleted successfully."),
+            "id" => $id,
+        ]);
+        /* if (!CategoryService::delete($id)) {
+            wp_send_json_error([
+                "message" => __("Unable to delete category."),
+            ]);
+        }
+
+        wp_send_json_success([
+            "message" => __("Category deleted successfully."),
+            "id" => $id,
+        ]); */
+    }
     /*public static function datatable(): void
     {
         self::verifyAjax();

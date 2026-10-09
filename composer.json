@@ -1,5 +1,5 @@
 {
-  "name": "talalalmrka/instafood-manager",
+  "name": "talalalmrka/ifm",
   "version": "1.0.0",
   "description": "WordPress plugin for importing, exporting, and managing InstaFood categories, products, variations, and images.",
   "type": "wordpress-plugin",

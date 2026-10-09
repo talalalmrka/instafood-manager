@@ -171,6 +171,14 @@ if (!function_exists('dump')) {
     }
 }
 
+if (!function_exists('dd')) {
+    function dd($data)
+    {
+        dump($data);
+        exit;
+    }
+}
+
 if (!function_exists('str')) {
     function str(?string $value = null): Stringable|string
     {

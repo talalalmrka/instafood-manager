@@ -1,10 +1,12 @@
 <?php
 
 /**
- * Plugin Name: InstaFood Manager
+ * Plugin Name: Instafood Manager
  * Description: Import, export, and manage InstaFood categories, products, variations, and images.
- * Version: 1.1.0
+ * Version: 1.0.0
+ * Plugin Uri: https://github.com/talalalmrka/ifm
  * Author: Talal Almrka
+ * Author Uri: https://github.com/talalalmrka
  * Requires at least: 5.8
  * Requires PHP: 8.2
  */
@@ -12,6 +14,7 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
 define('IFM_DEV_MODE', true);
 define('IFM_ERUDA', false);
 define('IFM_PLUGIN_FILE', __FILE__);
@@ -24,7 +27,7 @@ $ifm_plugin_data = get_plugin_data(IFM_PLUGIN_FILE, false, false);
 
 define('IFM_PLUGIN_VER', $ifm_plugin_data['Version']);
 define('IFM_PLUGIN_TITLE', $ifm_plugin_data['Name']);
-define('IFM_PAGE_SLUG', 'instafood-manager');
+define('IFM_PAGE_SLUG', 'ifm');
 
 define('IFM_ITEM_POST_TYPE', 'appetit_item');
 define('IFM_ITEM_TAXONOMY', 'appetit_items_category');
@@ -38,6 +41,7 @@ if (!file_exists($autoload)) {
 
 require_once $autoload;
 
-use Ifm\Ifm;
 
-Ifm::boot();
+use Ifm\IfmCore;
+
+IfmCore::boot();

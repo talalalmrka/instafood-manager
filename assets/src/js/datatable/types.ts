@@ -23,11 +23,9 @@ export interface Action {
   class?: string;
 }
 
-export type Item = Record<string, any>;
-
 export interface DatatableOptions {
   primaryKey: string;
-  ajaxAction: string;
+  ajaxPrefix: string;
   columns: Column[];
   buttons: Button[];
   actions: Action[];
@@ -43,28 +41,41 @@ export type PaginationLink = {
   active: boolean;
 };
 
-export type Pagination = {
-  current_page: number;
-  first_page_url: string;
-  from: number | null;
-  last_page: number;
-  last_page_url: string;
-  links: PaginationLink[];
-  next_page_url: string | null;
-  path: string;
-  per_page: number;
-  prev_page_url: string | null;
-  to: number | null;
-  total: number;
-};
-
-export type PaginatedResponse<T> = {
+export type PaginatedResponse = {
   success: boolean;
   data: {
-    items: T[];
-    pagination: Pagination;
+    message?: string;
+    items?: Item[];
+    pagination?: Pagination;
   };
 };
+export type RequestMethod = "GET" | "POST";
+
+export type RequestOptions = {
+  method?: RequestMethod;
+  action?: string;
+  replaceState?: boolean;
+  params?: Record<string, any>;
+};
+
+export type Item = Record<string, any>;
+
+export type Pagination = {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  per_page: number;
+};
+
+export interface RequestResponse {
+  success: boolean;
+  data: {
+    message?: string;
+    items?: Item[];
+    pagination?: Pagination;
+    [key: string]: any;
+  };
+}
 
 export const paginationIcons: Record<string, string> = {
   "pagination.previous": "bi-chevron-left rtl:bi-chevron-right",

@@ -6,13 +6,17 @@ import {
   type Action,
   type PaginationLink,
   paginationIcons,
+  type RequestOptions,
+  type RequestResponse,
 } from "./types";
+import { startLoading, finishLoading } from "../helpers/loading";
 import { ajaxNonce, ajaxUrl } from "../helpers/globals";
 import { cssClasses, dataGet, jsonPretty } from "../helpers/base";
+import { Toast } from "../helpers/toast";
 document.addEventListener("alpine:init", () => {
   Alpine.data("Datatable", (options: DatatableOptions) => ({
     primaryKey: options.primaryKey,
-    ajaxAction: options.ajaxAction,
+    ajaxPrefix: options.ajaxPrefix,
     columns: options.columns,
     buttons: options.buttons,
     actions: options.actions,
@@ -23,11 +27,16 @@ document.addEventListener("alpine:init", () => {
     selected: [],
     selectAll: false,
     loading: false,
+    loadingAction: null,
     itemIds() {
       return this.items.map((item: Item) => dataGet(item, this.primaryKey));
     },
-    get itemsJson() {
-      return jsonPretty(this.items);
+    isLoading(action: string = "") {
+      return this.loading && this.loadingAction === action;
+    },
+    setLoading(loading: boolean = true, action: string | null = null) {
+      this.loading = loading;
+      this.loadingAction = action;
     },
     onButtonClicked(action: string) {
       console.log("Button clicked", action);
@@ -143,8 +152,8 @@ document.addEventListener("alpine:init", () => {
     actionContent(item: Item, action: Action) {
       const itemId = item[this.primaryKey] ?? "";
       return `
-      <button type="button" x-on:click="onActionClicked('${action.click}', ${itemId})" title="${action.label}" class="text-xs">
-      <i class="icon ${action.icon}"></i>
+      <button type="button" x-on:click="${action.click}(${itemId})" title="${action.label}" class="text-xs">
+      <i class="icon ${action.icon}" :class="{'fg-loader-dots-move': isLoading('${action.click}')}"></i>
       </button>
       `.trim();
     },
@@ -153,7 +162,126 @@ document.addEventListener("alpine:init", () => {
         ? "text-gray-900 dark:text-gray-100"
         : "text-gray-400 dark:text-gray-500";
     },
-    async load(): Promise<void> {
+    async request(options: RequestOptions = {}): Promise<RequestResponse> {
+      // const action = options.action ?? "";
+      this.setLoading(true, options.action);
+      // startLoading(action);
+      try {
+        const method = options.method ?? "GET";
+        const params = new URLSearchParams();
+        const values = options.params ?? {};
+        if (options.action) {
+          params.set("action", `${this.ajaxPrefix}_${options.action}`);
+        }
+
+        if (ajaxNonce) {
+          params.set("nonce", ajaxNonce);
+        }
+
+        Object.entries(values).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            params.set(key, String(value));
+          }
+        });
+
+        let url = ajaxUrl;
+        const fetchOptions: RequestInit = {
+          method,
+          headers: {},
+        };
+
+        if (method === "GET") {
+          const query = params.toString();
+          url += `${url.includes("?") ? "&" : "?"}${query}`;
+
+          if (options.replaceState) {
+            const currentUrl = new URL(window.location.href);
+
+            Object.entries(values).forEach(([key, value]) => {
+              if (value !== undefined && value !== null && value !== "") {
+                currentUrl.searchParams.set(key, String(value));
+              } else {
+                currentUrl.searchParams.delete(key);
+              }
+            });
+
+            window.history.replaceState(
+              window.history.state,
+              "",
+              currentUrl.toString(),
+            );
+          }
+        } else {
+          fetchOptions.headers = {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          };
+          fetchOptions.body = params.toString();
+        }
+
+        const response = await fetch(url, fetchOptions);
+
+        if (!response.ok) {
+          this.setLoading(false, null);
+          throw new Error(`Request failed: ${response.status}`);
+        }
+
+        const result: RequestResponse = await response.json();
+
+        if (!result.success) {
+          this.setLoading(false, null);
+          throw new Error(result.data?.message ?? "Request failed.");
+        }
+        this.setLoading(false, null);
+        if (result.data?.message) {
+          Toast.success(result.data?.message);
+        }
+        return result;
+      } finally {
+        this.setLoading(false, null);
+        // finishLoading(action);
+      }
+    },
+    async loadItems(): Promise<void> {
+      try {
+        const result = await this.request({
+          method: "GET",
+          action: "items",
+          replaceState: true,
+          params: {
+            ...this.filters,
+            ...{
+              paged: this.paged,
+            },
+          },
+        });
+        const responseData = result.data;
+        this.items = responseData.items || [];
+        this.pagination = responseData.pagination || [];
+      } catch (error) {
+        Toast.error(error);
+      }
+    },
+    async delete(id: string | number): Promise<void> {
+      console.log(`Delete: ${id}`);
+      try {
+        const result = await this.request({
+          method: "POST",
+          action: "delete",
+          params: {
+            id: id,
+          },
+        });
+        console.log("Result", result);
+        const responseData = result.data;
+
+        // this.items = responseData.items || [];
+        // this.pagination = responseData.pagination || [];
+      } catch (error) {
+        Toast.error(error);
+      }
+    },
+
+    /* async load(): Promise<void> {
       this.loading = true;
 
       try {
@@ -232,18 +360,18 @@ document.addEventListener("alpine:init", () => {
       } finally {
         this.loading = false;
       }
-    },
+    }, */
 
     init() {
-      this.load();
+      this.loadItems();
 
       this.$watch("filters", () => {
         this.paged = undefined;
-        this.load();
+        this.loadItems();
       });
 
       this.$watch("paged", () => {
-        this.load();
+        this.loadItems();
       });
 
       this.$watch("selected", (newVal) => {

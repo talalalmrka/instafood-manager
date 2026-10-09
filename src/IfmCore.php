@@ -4,22 +4,26 @@ namespace Ifm;
 
 use Ifm\Pages\Categories;
 use Ifm\Pages\Export;
-use Ifm\Pages\FixImages;
 use Ifm\Pages\Import;
 use Ifm\Pages\Products;
 use Ifm\Services\ApiService;
+use Illuminate\Support\Str;
 
-class Ifm
+class IfmCore
 {
-    public static function pages(): array
+    /**
+     * pages
+     * @return \Illuminate\Support\Collection
+     */
+    public static function pages()
     {
-        return [
+        return collect([
             Import::class,
             Export::class,
             Categories::class,
             Products::class,
             // FixImages::class,
-        ];
+        ]);
     }
 
     public static function boot(): void
@@ -29,24 +33,31 @@ class Ifm
 
         add_filter("script_loader_tag", [self::class, "inject_module_type"], 10, 2);
 
-        foreach (self::pages() as $page) {
-            $page::boot();
+        foreach (self::pages() as $ifmPage) {
+            $ifmPage::boot();
         }
 
         ApiService::boot();
     }
 
+    /** 
+     * get allowed hooks
+     * @return \Illuminate\Support\Collection
+     */
+    public static function allowedHooks()
+    {
+        return collect([
+            "toplevel_page_" . IFM_PAGE_SLUG,
+            ...self::pages()->map(fn($ifmPage) => Str::of(IFM_PLUGIN_TITLE)->lower()->slug('-') . "_page_" . $ifmPage::slug())->values(),
+            /* ...array_map(
+                fn($page) => IFM_PAGE_SLUG . "_page_" . $ifmPage::slug(),
+                self::pages()
+            ), */
+        ]);
+    }
     public static function enqueue_assets(string $hook): void
     {
-        $allowedHooks = [
-            "toplevel_page_" . IFM_PAGE_SLUG,
-            ...array_map(
-                fn($page) => IFM_PAGE_SLUG . "_page_" . $page::slug(),
-                self::pages()
-            ),
-        ];
-
-        if (!in_array($hook, $allowedHooks, true)) {
+        if (static::allowedHooks()->doesntContain($hook)) {
             return;
         }
         if (IFM_DEV_MODE && IFM_ERUDA) {
@@ -126,20 +137,21 @@ class Ifm
             25
         );
 
-        foreach (self::pages() as $page) {
+        foreach (self::pages() as $ifmPage) {
             add_submenu_page(
                 IFM_PAGE_SLUG,
-                $page::title(),
-                $page::title(),
-                $page::capability(),
-                $page::slug(),
-                fn() => self::renderPage($page)
+                $ifmPage::title(),
+                $ifmPage::title(),
+                $ifmPage::capability(),
+                $ifmPage::slug(),
+                fn() => self::renderPage($ifmPage)
             );
         }
     }
 
     private static function renderPage(string $currentPage): void
     {
+        global $page;
         if (!current_user_can($currentPage::capability())) {
             wp_die(esc_html__("You do not have permission to access this page."));
         }
@@ -155,21 +167,21 @@ class Ifm
                 class="ifm-nav"
                 role="nav"
                 aria-label="<?php echo esc_attr($currentPage::title()); ?>">
-                <?php foreach (self::pages() as $page): ?>
-                    <?php $isCurrent = $page === $currentPage; ?>
+                <?php foreach (self::pages() as $ifmPage): ?>
+                    <?php $isCurrent = $ifmPage === $currentPage; ?>
 
                     <a
-                        id="tab-<?php echo esc_attr($page::slug()); ?>"
+                        id="tab-<?php echo esc_attr($ifmPage::slug()); ?>"
                         href="<?php echo esc_url(
-                                    admin_url("admin.php?page=" . $page::slug())
+                                    admin_url("admin.php?page=" . $ifmPage::slug())
                                 ); ?>"
                         class="<?php echo esc_attr(
                                     cssClasses("ifm-nav-link", ["active" => $isCurrent])
                                 ); ?>">
-                        <?php icon($page::icon()); ?>
+                        <?php icon($ifmPage::icon()); ?>
 
                         <span>
-                            <?php echo esc_html($page::title()); ?>
+                            <?php echo esc_html($ifmPage::title()); ?>
                         </span>
                     </a>
                 <?php endforeach; ?>
@@ -181,7 +193,6 @@ class Ifm
                 <h1 class="ifm-page-title">
                     <?php echo esc_html($currentPage::title()); ?>
                 </h1>
-
                 <?php $currentPage::render(); ?>
             </div>
         </div>
