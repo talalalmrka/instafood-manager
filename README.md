@@ -1,6 +1,6 @@
 # InstaFood Manager
 
-![InstaFood Manager](https://raw.githubusercontent.com/talalalmrka/ifm/screenshot.png)
+![InstaFood Manager](https://repository-images.githubusercontent.com/1400427556/747e1480-f4d3-45ed-b1e0-242fc5cae8da)
 A small WordPress admin plugin for import, export, manage InstaFood categories, menu items, and product variations.
 
 ## Requirements
