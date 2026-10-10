@@ -19,7 +19,7 @@ A small WordPress admin plugin for import, export, manage InstaFood categories, 
 
 ## Installation
 
-1. Download (Instafood Manager)[https://github.com/talalalmrka/ifm]
+1. Download [Instafood Manager](https://github.com/talalalmrka/ifm)
 2. Upload `ifm.zip` from WordPress Plugins.
 3. Activate the plugin.
 4. Open `InstaFood Manager` from dashboard menu.
