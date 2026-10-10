@@ -5,11 +5,10 @@ import {
   type Column,
   type Action,
   type PaginationLink,
-  paginationIcons,
   type RequestOptions,
   type RequestResponse,
 } from "./types";
-import { startLoading, finishLoading } from "../helpers/loading";
+// import { startLoading, finishLoading } from "../helpers/loading";
 import { ajaxNonce, ajaxUrl } from "../helpers/globals";
 import { cssClasses, dataGet, jsonPretty } from "../helpers/base";
 import { Toast } from "../helpers/toast";
@@ -25,18 +24,48 @@ document.addEventListener("alpine:init", () => {
     items: options.items || [],
     pagination: {},
     selected: [],
+    showDebug: localStorage.getItem("datatableDebug") === "true",
     selectAll: false,
     loading: false,
     loadingAction: null,
+    loadingArgs: null,
+    get debugJson() {
+      return jsonPretty({
+        primaryKey: this.primaryKey,
+        ajaxPrefix: this.ajaxPrefix,
+        paged: this.paged,
+        filters: this.filters,
+        items: this.items,
+        pagination: this.pagination,
+        selected: this.selected,
+      });
+    },
+    toggleDebug() {
+      this.showDebug = !this.showDebug;
+      if (this.showDebug) {
+        localStorage.setItem("datatableDebug", "true");
+      } else {
+        localStorage.removeItem("datatableDebug");
+      }
+    },
     itemIds() {
       return this.items.map((item: Item) => dataGet(item, this.primaryKey));
     },
-    isLoading(action: string = "") {
-      return this.loading && this.loadingAction === action;
+    isLoading(action: string = "", args: any = null) {
+      return (
+        this.loading &&
+        this.loadingAction === action &&
+        this.loadingArgs === args
+      );
     },
-    setLoading(loading: boolean = true, action: string | null = null) {
+    setLoading(
+      loading: boolean = true,
+      action: string | null = null,
+      args: any = null,
+    ) {
       this.loading = loading;
       this.loadingAction = action;
+      this.loadingArgs = args;
     },
     onButtonClicked(action: string) {
       console.log("Button clicked", action);
@@ -48,7 +77,12 @@ document.addEventListener("alpine:init", () => {
       });
     },
     resetFilters() {
-      this.filters = {};
+      this.filters = {
+        search: "",
+        per_page: 15,
+        orderby: "",
+        order: "",
+      };
     },
     get rows() {
       if (!this.items.length && !this.loading) {
@@ -56,64 +90,6 @@ document.addEventListener("alpine:init", () => {
         return `<tr><td colspan="${colspan}" class="text-center">No items found!</td></tr>`;
       }
       return this.items.map((item: Item) => this.rowContent(item)).join("");
-    },
-    hasPagination(): boolean {
-      return this.pagination.last_page > 1;
-    },
-    get paginationHtml() {
-      if (!this.hasPagination()) {
-        return "";
-      }
-
-      return `
-      <div class="pagination-summary">Page ${this.pagination.current_page} of ${
-        this.pagination.last_page
-      }</div>
-      <nav class="pagination" aria-label="Pagination" role="pagination">
-      <button x-on:click="goToPage(1)" class="pagination-item" title="First Page"${
-        this.paged === 1 ? " disabled" : ""
-      }>
-        <i class="icon bi-chevron-double-left rtl:bi-chevron-double-right"></i>
-      </button>
-      ${this.pagination.links
-        .map((item: PaginationLink) => this.paginationLinkHtml(item))
-        .join("")}
-      <button x-on:click="goToPage(${
-        this.pagination.last_page
-      })" class="pagination-item" title="Last Page" ${
-        this.paged === this.pagination.last_page ? " disabled" : ""
-      }>
-        <i class="icon bi-chevron-double-right rtl:bi-chevron-double-left"></i>
-      </button>
-      </nav>
-      `.trim();
-    },
-    paginationLinkHtml(item: PaginationLink) {
-      const icon = paginationIcons[item.label];
-      const label = icon ? `<i class="icon ${icon}"></i>` : item.label;
-      const clickAttr = item.page ? ` x-on:click="goToPage(${item.page})"` : "";
-      return `<button${clickAttr} title="Page ${item.page}" class="${cssClasses(
-        "pagination-item",
-        {
-          active: item.active,
-        },
-      )}"${item.page ? "" : " disabled"}>${label}</button$>`;
-    },
-    goToPage(paged: number) {
-      if (this.paged !== paged) {
-        this.paged = paged;
-      }
-    },
-    sort(columnName: string) {
-      const orderby = columnName;
-      const order =
-        this.filters.orderby === columnName && this.filters.order === "asc"
-          ? "desc"
-          : "asc";
-      const currentFilters = this.filters;
-      currentFilters.orderby = orderby;
-      currentFilters.order = order;
-      this.filters = currentFilters;
     },
     rowContent(item: Item) {
       const itemId = item[this.primaryKey] ?? "";
@@ -150,12 +126,151 @@ document.addEventListener("alpine:init", () => {
         : "";
     },
     actionContent(item: Item, action: Action) {
-      const itemId = item[this.primaryKey] ?? "";
+      const itemId = dataGet(item, this.primaryKey);
+      // const onClickAttr = `onActionClicked('${action.click}', ${itemId})`;
+      const onClickAttr = `deleteItem(${itemId})`;
       return `
-      <button type="button" x-on:click="${action.click}(${itemId})" title="${action.label}" class="text-xs">
+      <button type="button" x-on:click="${onClickAttr}" title="${action.label}" class="text-xs">
       <i class="icon ${action.icon}" :class="{'fg-loader-dots-move': isLoading('${action.click}')}"></i>
       </button>
       `.trim();
+    },
+    hasPagination() {
+      return this.pagination?.total_pages && this.pagination.total_pages > 1;
+    },
+    get paginationLinks(): PaginationLink[] {
+      if (!this.hasPagination()) {
+        return [];
+      }
+
+      const currentPage = Number(
+        this.pagination.current_page ?? this.paged ?? 1,
+      );
+      const totalPages = Number(
+        this.pagination.total_pages ?? this.pagination.last_page ?? 1,
+      );
+
+      const links: PaginationLink[] = [];
+      const addLink = (
+        page: number | null,
+        label: string,
+        title: string,
+        disabled = false,
+        active = false,
+      ) => {
+        links.push({
+          page,
+          label,
+          title,
+          disabled,
+          active,
+        });
+      };
+
+      addLink(
+        1,
+        '<i class="icon bi-chevron-double-left rtl:bi-chevron-double-right"></i>',
+        "First page",
+        currentPage === 1,
+      );
+
+      addLink(
+        currentPage > 1 ? currentPage - 1 : null,
+        '<i class="icon bi-chevron-left rtl:bi-chevron-right"></i>',
+        "Previous page",
+        currentPage === 1,
+      );
+
+      const startPage = Math.max(1, Math.min(currentPage - 1, totalPages - 2));
+      const endPage = Math.min(totalPages, startPage + 2);
+
+      if (startPage > 1) {
+        addLink(1, "1", "Page 1", false, currentPage === 1);
+
+        if (startPage > 2) {
+          addLink(null, "...", "More pages", true);
+        }
+      }
+
+      for (let page = startPage; page <= endPage; page++) {
+        addLink(
+          page,
+          String(page),
+          `Page ${page}`,
+          false,
+          page === currentPage,
+        );
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          addLink(null, "...", "More pages", true);
+        }
+
+        addLink(
+          totalPages,
+          String(totalPages),
+          `Page ${totalPages}`,
+          false,
+          currentPage === totalPages,
+        );
+      }
+
+      addLink(
+        currentPage < totalPages ? currentPage + 1 : null,
+        '<i class="icon bi-chevron-right rtl:bi-chevron-left"></i>',
+        "Next page",
+        currentPage === totalPages,
+      );
+
+      addLink(
+        totalPages,
+        '<i class="icon bi-chevron-double-right rtl:bi-chevron-double-left"></i>',
+        "Last page",
+        currentPage === totalPages,
+      );
+
+      return links;
+    },
+    get paginationHtml() {
+      if (!this.hasPagination()) {
+        return "";
+      }
+      return `
+      <div class="pagination-summary">Page ${this.pagination.current_page} of ${
+        this.pagination.total_pages
+      }</div>
+      <nav class="pagination" aria-label="Pagination" role="pagination">
+      ${this.paginationLinks
+        .map((item: PaginationLink) => this.paginationLinkHtml(item))
+        .join("")}
+      </nav>
+      `.trim();
+    },
+    paginationLinkHtml(item: PaginationLink) {
+      const clickAttr = item.page ? ` x-on:click="goToPage(${item.page})"` : "";
+      return `<button${clickAttr} title="${item.title}" class="${cssClasses(
+        "pagination-item",
+        {
+          active: item.active,
+        },
+      )}"${item.disabled ? " disabled" : ""}>${item.label}</button$>`;
+    },
+    goToPage(paged: number) {
+      if (this.paged !== paged) {
+        this.paged = paged;
+      }
+    },
+    sort(columnName: string) {
+      const orderby = columnName;
+      const order =
+        this.filters.orderby === columnName && this.filters.order === "asc"
+          ? "desc"
+          : "asc";
+      const currentFilters = this.filters;
+      currentFilters.orderby = orderby;
+      currentFilters.order = order;
+      this.filters = currentFilters;
     },
     sortClass(columnName: string, order: "asc" | "desc") {
       return columnName === this.filters.orderby && order === this.filters.order
@@ -261,7 +376,7 @@ document.addEventListener("alpine:init", () => {
         Toast.error(error);
       }
     },
-    async delete(id: string | number): Promise<void> {
+    async deleteItem(id: any): Promise<void> {
       console.log(`Delete: ${id}`);
       try {
         const result = await this.request({
@@ -271,97 +386,18 @@ document.addEventListener("alpine:init", () => {
             id: id,
           },
         });
-        console.log("Result", result);
-        const responseData = result.data;
 
-        // this.items = responseData.items || [];
-        // this.pagination = responseData.pagination || [];
+        const responseData = result.data;
+        const responseId = responseData.id;
+        if (responseId) {
+          this.items = this.items.filter(
+            (item: Item) => dataGet(item, this.primaryKey) !== responseId,
+          );
+        }
       } catch (error) {
         Toast.error(error);
       }
     },
-
-    /* async load(): Promise<void> {
-      this.loading = true;
-
-      try {
-        const params = new URLSearchParams();
-
-        params.set("action", this.ajaxAction);
-        if (this.paged) {
-          params.set("paged", String(this.paged));
-        }
-
-        if (this.filters.per_page) {
-          params.set("per_page", String(this.filters.per_page));
-        }
-
-        if (this.filters.search) {
-          params.set("search", this.filters.search);
-        }
-
-        if (this.filters.orderby) {
-          params.set("orderby", this.filters.orderby);
-        }
-
-        if (this.filters.order) {
-          params.set("order", this.filters.order);
-        }
-
-        if (ajaxNonce) {
-          params.set("nonce", ajaxNonce);
-        }
-
-        const url = `${ajaxUrl}?${params.toString()}`;
-
-        const currentUrl = new URL(window.location.href);
-
-        Object.entries(this.filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== "") {
-            currentUrl.searchParams.set(key, String(value));
-          } else {
-            currentUrl.searchParams.delete(key);
-          }
-        });
-
-        if (
-          this.paged !== undefined &&
-          this.paged !== null &&
-          this.paged !== "" &&
-          this.paged !== 1
-        ) {
-          currentUrl.searchParams.set("paged", String(this.paged));
-        } else {
-          currentUrl.searchParams.delete("paged");
-        }
-        history.replaceState({}, "", currentUrl.toString());
-
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`DataTable request failed: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        if (!result.success) {
-          throw new Error(result.data?.message ?? "DataTable request failed.");
-        }
-
-        const responseData = result.data;
-
-        this.items = responseData.items || [];
-        this.pagination = responseData.pagination || [];
-      } finally {
-        this.loading = false;
-      }
-    }, */
-
     init() {
       this.loadItems();
 

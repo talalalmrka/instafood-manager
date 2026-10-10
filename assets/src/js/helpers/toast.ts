@@ -77,7 +77,6 @@ export class Toast {
       pauseOnHover: true,
       ...options,
     };
-    console.log("toast options", options);
     this.id = crypto.randomUUID();
     this.remaining = this.options.duration;
 

@@ -35,10 +35,11 @@ export interface DatatableOptions {
 }
 
 export type PaginationLink = {
-  url: string | null;
+  title: string | null;
   label: string;
   page: number | null;
   active: boolean;
+  disabled: boolean;
 };
 
 export type PaginatedResponse = {

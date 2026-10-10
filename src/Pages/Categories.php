@@ -36,6 +36,9 @@ class Categories extends Datatable
     public static function columns(): array
     {
         return [
+            Column::make('term_id')
+                ->label(__('ID'))
+                ->sortable(),
             Column::make('name')
                 ->label(__('Name'))
                 ->sortable(),

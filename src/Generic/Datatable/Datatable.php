@@ -12,7 +12,6 @@ use Ifm\Generic\Datatable\Button;
 use Ifm\Generic\Datatable\Action;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
 
 /**
  * Base class for pages that render a data table.
@@ -87,7 +86,7 @@ abstract class Datatable extends Page
   public static function columnsCount(): int
   {
     $additionalCols = !empty(static::actions()) ? 2 : 1;
-    return sizeof(self::columns()) + $additionalCols;
+    return sizeof(static::columns()) + $additionalCols;
   }
   public static function filters(): void {}
 
@@ -349,14 +348,29 @@ abstract class Datatable extends Page
           <tbody x-html="rows">
           </tbody>
           <tfoot>
+            <tr>
+              <th colspan="<?php echo esc_attr(static::columnsCount()); ?>">
+                <div class="flex items-center gap-2 justify-between">
+                  <span x-text="`${selected.length} selected.`"></span>
+                  <span x-text="`${pagination.total_items} items`"></span>
+                </div>
+              </th>
+            </tr>
             <?php self::headRow(); ?>
           </tfoot>
         </table>
       </div>
-      <div class="pagination-container pt-3 px-3" x-show="hasPagination()" x-html="paginationHtml"></div>
-      <span x-show="isLoading('items')" class="fixed z-50 center-all text-white bg-primary/80 pill px-3">
-        <i class="icon fg-loader-dots-move text-xl leading-0 m-0! p-0!"></i>
+      <div class="pagination-container pt-3" x-show="hasPagination()" x-html="paginationHtml"></div>
+      <span x-show="isLoading('items')" class="fixed z-50 center-all text-primary text-xl px-4 py-0! bg-white/90 dark:bg-gray-800/70 border shadow backdrop-blur-md pill">
+        <i class="icon fg-loader-dots-bounce"></i>
       </span>
+      <div class="mt-4">
+        <button x-on:click="toggleDebug" type="button" class="btn-circle-secondary btn-circle-sm">
+          <i class="icon bi-eye-fill" :class="{'bi-eye-fill-slash': showDebug}"></i>
+        </button>
+        <pre class="fg-code" x-show="showDebug"><code x-html="debugJson"></code></pre>
+      </div>
+
     </div>
 <?php
   }
