@@ -1,6 +1,7 @@
-# InstaFood JSON Importer
+# InstaFood Manager
 
-A small WordPress admin plugin for importing InstaFood categories, menu items, and product variations from JSON.
+![InstaFood Manager](https://raw.githubusercontent.com/talalalmrka/ifm/screenshot.png)
+A small WordPress admin plugin for import, export, manage InstaFood categories, menu items, and product variations.
 
 ## Requirements
 
@@ -9,13 +10,16 @@ A small WordPress admin plugin for importing InstaFood categories, menu items, a
 - The InstaFood post type `appetit_item`
 - The InstaFood taxonomy `appetit_items_category`
 
+## Features
+
+1. Import instafood categories, products, settings from json.
+2. Export instafood categories, products, settings to json, xlsx.
+3. Manage instafood categories.
+4. Manage instafood products.
+
 ## Installation
 
-1. Upload `instafood-json-importer.zip` from WordPress Plugins.
-2. Activate the plugin.
-3. Open `Tools -> InstaFood JSON Importer`.
-4. Paste the JSON.
-5. Choose the existing-item behavior.
-6. Import.
-
-The importer follows the `appetit_item_meta` structure observed in the supplied WordPress XML export.
+1. Download (Instafood Manager)[https://github.com/talalalmrka/ifm]
+2. Upload `ifm.zip` from WordPress Plugins.
+3. Activate the plugin.
+4. Open `InstaFood Manager` from dashboard menu.
